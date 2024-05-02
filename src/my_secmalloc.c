@@ -28,9 +28,8 @@ bool	init_heap(void) {
 
 //New chunk -> byte_before, block_addr, size
 
-void	fill_chunk(size_t byte_before, size_t size, t_chunk_state state, t_chunk *new) {
-	new->bytes_before = byte_before;
-	new->data_addr = heap_data + byte_before;
+void	fill_chunk(void *data_addr, size_t size, t_chunk_state state, t_chunk *new) {
+	new->data_addr = data_addr;
 	new->size = size;
 	new->state = state;
 	new->next = NULL;
@@ -46,22 +45,26 @@ void add_next_chunk(t_chunk *chunk_before, t_chunk *chunk_to_add) {
 	meta.chunks_nb += 1;
 }
 
-void	*create_chunk(size_t size, size_t previously_allocated) {
+void	*create_chunk(size_t size, t_chunk *chunk) {
 
+	void *new_data_chunk = heap_data;
 //	printf("Previously Allocated : %ld nb : %ld\n", previously_allocated, meta.chunks_nb - 1);
-	void *new_data_chunk = heap_data + previously_allocated;
+	if (chunk)
+	{
+		new_data_chunk = chunk->data_addr;
+	}
 
 	t_chunk *new_chunk = heap_metadata + sizeof(t_chunk) * (meta.chunks_nb - 1);
 	t_chunk *next_free_chunk = heap_metadata + sizeof(t_chunk) * meta.chunks_nb;
 
 
-	fill_chunk(previously_allocated, size, BUSY, new_chunk);
-	size_t free_space = PAGE_SIZE * data.pages - (previously_allocated + size);
-	fill_chunk(previously_allocated + size, free_space, FREE, next_free_chunk);
+	fill_chunk(new_data_chunk, size, BUSY, new_chunk);
+	size_t free_space = PAGE_SIZE * data.pages - (new_data_chunk - size - heap_data);
+	fill_chunk(new_data_chunk + size /*+ canary size */, free_space, FREE, next_free_chunk);
 
 	add_next_chunk(new_chunk, next_free_chunk);
 
-	printf("ETA %ld\n", PAGE_SIZE * data.pages - (previously_allocated + size));
+	printf("ETA %ld\n", free_space);
 
 //	printf("last block %p\n", meta.last_block);
 
@@ -86,7 +89,6 @@ void	*ask_new_data_page(size_t size) {
 }
 
 void	*get_free_chunk(size_t size) {
-	size_t previous_allocated_size = 0;
 	if (!heap_data) {
 		if (!init_heap()) {
 			return (NULL);
@@ -98,25 +100,21 @@ void	*get_free_chunk(size_t size) {
 
 	//First Block Dispo ?
 	if (ptr->state == FREE && ptr->size >= size) {
-		return (create_chunk(size, previous_allocated_size));
+		return (create_chunk(size, NULL));
 	}
 	//loop pour verifier le prochain block dispo
 	while (ptr != meta.last_chunk) {
 	//	printf("we are in the loop: state %d size %ld block: %p\n", ptr->state, ptr->size, ptr);
-
 		if (ptr->state == FREE && ptr->size >= size) {
-			return (create_chunk(size, previous_allocated_size));
+			return (create_chunk(size, ptr));
 		}
-
-		previous_allocated_size += ptr->size;
-
-		if (size > PAGE_SIZE * data.pages - previous_allocated_size) {
+		if (size > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
 			ask_new_data_page(size);
 		}
 		ptr = ptr + 1;
 	}
 	if (ptr->state == FREE && ptr->size >= size) {
-		return (create_chunk(size, previous_allocated_size));
+		return (create_chunk(size, ptr));
 	}
 	return (NULL);
 }
