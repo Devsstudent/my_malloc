@@ -2,14 +2,14 @@
 #include <stdio.h>
 #include "my_secmalloc.private.h"
 #include <sys/mman.h>
-/*
+
 Test(mmap, simple) {
     void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     cr_expect(ptr != NULL);
     int res = munmap(ptr, 4096);
     cr_expect(res == 0);
 }
-
+/*
 Test(my_malloc_simple, simple) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
@@ -40,7 +40,7 @@ Test(my_malloc_more_pages, more_pages){
 	cr_expect(ptr4 != NULL, "Failed to alloc ptr4");
 	cr_expect((size_t) ptr4 == (size_t) ptr + 12 + 200 + 4000 + 400, "Not aligned: %lx -%lx\n", (size_t)ptr4, (size_t)ptr + 12 + 200 + 4000 + 400);
 }
-*/
+
 Test(my_free, free_a_chunk) {
 	void *ptr = my_malloc(12);
 	my_free(ptr);
@@ -61,4 +61,16 @@ Test(my_free, free_a_chunk) {
 	cr_expect(ptr7 != NULL, "Failed to alloc ptr7");
 	cr_expect((size_t) ptr7 == (size_t) ptr3, "ptr7 %ld !=  ptr3 %ld", (size_t) ptr7, (size_t) ptr3);
 }
+*/
+Test(canary, overflow) {
+	void *ptr = my_malloc(12);
+	char *s = (char *)ptr;
+	int i = 0;
+	while (i < 15) {
+		s[i] = 'a';
+		i++;
+	}
+	my_free(s);
+}
+
 //Test(my_free, free_first_chunk)

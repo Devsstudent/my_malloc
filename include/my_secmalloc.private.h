@@ -9,6 +9,7 @@
 # include <stdbool.h>
 # include <string.h>
 # include <errno.h>
+# include <stdint.h>
 
 # define PAGE_SIZE 4096
 
@@ -23,6 +24,7 @@ typedef struct chunk {
 	size_t			size;
 	struct chunk	*next;
 	struct chunk	*prev;
+	uint8_t			canary;
 }	t_chunk;
 
 typedef struct data {

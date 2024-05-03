@@ -31,8 +31,13 @@ t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 
 	//Add a new chunk after the last chunk
 	t_chunk *new = heap_metadata + (sizeof(t_chunk) * (meta.chunks_nb));
+	if (state == BUSY) {
+		uint8_t	canary = 42;
+		new->canary = canary;
+		*(uint8_t *)(data_addr + size) = canary;
+	}
 	new->data_addr = data_addr;
-	new->size = size;
+	new->size = size + 1;
 	new->state = state;
 	new->next = NULL;
 	new->prev = NULL;
@@ -88,28 +93,28 @@ bool ask_new_data_page(size_t size) {
 	printf("%p, size %ld, \n", heap_data, PAGE_SIZE * data.pages + size);
 	t_chunk *last_chunk = meta.last_chunk;
 	last_chunk->size = last_chunk->size + (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) :(((size_t) (size / 4096) + 1) * PAGE_SIZE));
-	data.pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
+	data.pages += (size + 1 % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
 	return (true);
 }
 
 void	*get_free_chunk(size_t size) {
-	if (meta.first_chunk == meta.last_chunk && meta.first_chunk->state == FREE && meta.first_chunk->size >= size) {
+	if (meta.first_chunk == meta.last_chunk && meta.first_chunk->state == FREE && meta.first_chunk->size >= size + 1) {
 		return (meta.first_chunk);
 	}
 	
 	//else check if we have a free chunk that could contains the new requested data
 	t_chunk *ptr = meta.first_chunk;
 
-	if (ptr->state == FREE && ptr->size >= size) 
+	if (ptr->state == FREE && ptr->size >= size + 1) 
 		return (ptr);
 
 	while (ptr) {
 		//	printf("we are in the loop: state %d size %ld block: %p\n", ptr->state, ptr->size, ptr);
-		if (ptr->state == FREE && ptr->size >= size)
+		if (ptr->state == FREE && ptr->size >= size + 1)
 			return (ptr);
 		printf("size %ld, size_max %ld, data: %ld\n", size, PAGE_SIZE * data.pages - (ptr->data_addr - heap_data), data.pages);
-		if (size > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
-			if (!ask_new_data_page(size)) {
+		if (size + 1 > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
+			if (!ask_new_data_page(size + 1)) {
 				printf("failed request new page\n");
 				return (NULL);
 			}
@@ -239,10 +244,16 @@ void    my_free(void *ptr)
 		return ;
 	}
 	t_chunk *chunk = get_chunk(ptr);
+	printf("FREE\n");
 	if (!chunk) {
 		return ;
 	}
 	if (chunk->state == FREE) {
+		return ;
+	}
+	printf("%i, %i\n", *(uint8_t*)(chunk->data_addr + chunk->size - 1), chunk->canary);
+	if (*(uint8_t *)(chunk->data_addr + chunk->size - 1) != chunk->canary) {
+		printf("EROORORRRORORO de CANNANANARY\n");
 		return ;
 	}
 	chunk->state = FREE;
