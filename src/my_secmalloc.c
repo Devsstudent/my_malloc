@@ -242,6 +242,9 @@ void    my_free(void *ptr)
 	if (!chunk) {
 		return ;
 	}
+	if (chunk->state == FREE) {
+		return ;
+	}
 	chunk->state = FREE;
 	merge_chunk(chunk);
 	debug();
