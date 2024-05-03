@@ -16,11 +16,9 @@ bool	init_heap(void) {
 	if (!heap_metadata) {
 		return(false);
 	}
-	t_chunk *first_chunk = heap_metadata;
-	fill_chunk(0, PAGE_SIZE, FREE, first_chunk);
-	meta.chunks_nb = 1;
+	printf("Base data addr : %p\n", heap_data);
+	t_chunk *first_chunk = new_chunk(heap_data, PAGE_SIZE, FREE);
 	meta.first_chunk = first_chunk;
-	meta.last_chunk = first_chunk;
 	meta.pages = 1;
 	data.pages = 1;
 	return (true);
@@ -28,14 +26,22 @@ bool	init_heap(void) {
 
 //New chunk -> byte_before, block_addr, size
 
-void	fill_chunk(void *data_addr, size_t size, t_chunk_state state, t_chunk *new) {
+t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state) {
+	//We have to check if there is enough space, otherwise we have to ask for a new page
+
+	//Add a new chunk after the last chunk
+	t_chunk *new = heap_metadata + (sizeof(t_chunk) * (meta.chunks_nb));
 	new->data_addr = data_addr;
 	new->size = size;
 	new->state = state;
 	new->next = NULL;
 	new->prev = NULL;
+	meta.last_chunk = new;
+	meta.chunks_nb += 1;
+	return (new);
 }
 
+/*
 void add_next_chunk(t_chunk *chunk_before, t_chunk *chunk_to_add) {
 	chunk_before->next = chunk_to_add;
 	chunk_to_add->prev = chunk_before;
@@ -44,7 +50,6 @@ void add_next_chunk(t_chunk *chunk_before, t_chunk *chunk_to_add) {
 	}
 	meta.chunks_nb += 1;
 }
-
 void	*create_chunk(size_t size, t_chunk *chunk) {
 
 	void *new_data_chunk = heap_data;
@@ -58,9 +63,9 @@ void	*create_chunk(size_t size, t_chunk *chunk) {
 	t_chunk *next_free_chunk = heap_metadata + sizeof(t_chunk) * meta.chunks_nb;
 
 
-	fill_chunk(new_data_chunk, size, BUSY, new_chunk);
+	//fill_chunk(new_data_chunk, size, BUSY, new_chunk);
 	size_t free_space = PAGE_SIZE * data.pages - (new_data_chunk - size - heap_data);
-	fill_chunk(new_data_chunk + size /*+ canary size */, free_space, FREE, next_free_chunk);
+	//fill_chunk(new_data_chunk + size + canary size , free_space, FREE, next_free_chunk);
 
 	add_next_chunk(new_chunk, next_free_chunk);
 
@@ -69,59 +74,97 @@ void	*create_chunk(size_t size, t_chunk *chunk) {
 //	printf("last block %p\n", meta.last_block);
 
 	return (new_data_chunk);
-}
+}*/
 
-void	*ask_new_data_page(size_t size) {
-
+bool ask_new_data_page(size_t size) {
+	printf("New page requested\n");
 	void *new_data = mremap(heap_data, PAGE_SIZE * data.pages, PAGE_SIZE * data.pages + size, MREMAP_MAYMOVE);
 
 	if (!new_data || new_data != heap_data) {
 		fprintf(stderr, "mremap failed: %s, %ld\n", strerror(errno), PAGE_SIZE * data.pages + size);
-		return (NULL);
+		return (false);
 	}
 	heap_data = new_data;
 	printf("%p, size %ld, \n", heap_data, PAGE_SIZE * data.pages + size);
-
-	t_chunk *last_block = meta.last_chunk;
-	last_block->size = last_block->size + size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) :(((size_t) (size / 4096) + 1) * PAGE_SIZE);
-	data.pages += last_block->size + size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1));
-	return (heap_data);
+	t_chunk *last_chunk = meta.last_chunk;
+	last_chunk->size = last_chunk->size + (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) :(((size_t) (size / 4096) + 1) * PAGE_SIZE));
+	data.pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
+	return (true);
 }
 
 void	*get_free_chunk(size_t size) {
-	if (!heap_data) {
-		if (!init_heap()) {
-			return (NULL);
-		}
+	if (meta.first_chunk == meta.last_chunk && meta.first_chunk->state == FREE && meta.first_chunk->size >= size) {
+		return (meta.first_chunk);
 	}
-	//check if we have a free chunk that could contains the new requested data
+	
+	//else check if we have a free chunk that could contains the new requested data
 	t_chunk *ptr = meta.first_chunk;
-	//printf("STATE %d Chunks %ld\n", ptr->state, meta.chunks_nb);
 
-	//First Block Dispo ?
-	if (ptr->state == FREE && ptr->size >= size) {
-		return (create_chunk(size, NULL));
-	}
-	//loop pour verifier le prochain block dispo
-	while (ptr != meta.last_chunk) {
-	//	printf("we are in the loop: state %d size %ld block: %p\n", ptr->state, ptr->size, ptr);
-		if (ptr->state == FREE && ptr->size >= size) {
-			return (create_chunk(size, ptr));
-		}
+	if (ptr->state == FREE && ptr->size >= size) 
+		return (ptr);
+
+	while (ptr) {
+		//	printf("we are in the loop: state %d size %ld block: %p\n", ptr->state, ptr->size, ptr);
+		if (ptr->state == FREE && ptr->size >= size)
+			return (ptr);
+		printf("size %ld, size_max %ld, data: %ld\n", size, PAGE_SIZE * data.pages - (ptr->data_addr - heap_data), data.pages);
 		if (size > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
-			ask_new_data_page(size);
+			if (!ask_new_data_page(size)) {
+				printf("failed request new page\n");
+				return (NULL);
+			}
+			ptr = meta.last_chunk;
+			continue ;
 		}
-		ptr = ptr + 1;
+		ptr = ptr->next;
 	}
-	if (ptr->state == FREE && ptr->size >= size) {
-		return (create_chunk(size, ptr));
-	}
+	//printf("STATE %d Chunks %ld\n", ptr->state, meta.chunks_nb);
 	return (NULL);
+}
+
+//This add split a data_chunk into 2 chunk, 1 BUSY and 1 FREE
+void	split_data_chunk(t_chunk *chunk, size_t initial_data_size) {
+	t_chunk *_new_chunk;
+
+	if (chunk->size == initial_data_size)
+		return ;
+	printf("base size : %ld, chunk_size : %ld\n", initial_data_size, chunk->size);
+	_new_chunk = new_chunk(chunk->data_addr + chunk->size, initial_data_size - chunk->size, FREE);
+	_new_chunk->prev = chunk;
+	if (chunk->next) {
+		_new_chunk->next = chunk->next;
+		if (chunk->next->next)
+			chunk->next->next->prev = _new_chunk;
+	}
+	chunk->next = _new_chunk;
+}
+
+void *insert_chunk(t_chunk *free_chunk, size_t size) {
+	size_t	initial_data_size = free_chunk->size;
+	printf("size %ld address %p\n", initial_data_size, free_chunk->data_addr);
+	free_chunk->state = BUSY;
+	free_chunk->size = size;
+	split_data_chunk(free_chunk, initial_data_size);
+	printf("chunk info : %ld %d new chunk : %ld %d\n", free_chunk->size, free_chunk->state, free_chunk->next->size, free_chunk->next->state);
+	return (free_chunk->data_addr);
 }
 
 void    *my_malloc(size_t size)
 {
-	return (get_free_chunk(size));
+	void *res = NULL;
+	if (!heap_data) {
+		if (!init_heap()) {
+			return (res);
+		}
+	}
+	t_chunk *free_chunk = get_free_chunk(size);
+	if (!free_chunk) {
+		return (res);
+	}
+	printf("Entering malloc \n");
+	res = insert_chunk(free_chunk, size);
+	printf("res : %p\n", res);
+	return (res);
 }
 void *get_chunk(void *addr) {
 	for (size_t i = 0; i < meta.chunks_nb; i++) {
@@ -138,6 +181,7 @@ void merge_chunk(t_chunk *first_chunk, t_chunk *second_chunk) {
 	memset(second_chunk, 0, sizeof(t_chunk));
 }
 
+/*
 void optimize_memory(t_chunk *chunk_free) {
 
 	if (meta.first_chunk != chunk_free && (chunk_free - 1)->state == FREE) {
@@ -148,7 +192,7 @@ void optimize_memory(t_chunk *chunk_free) {
 		merge_chunk(chunk_free, chunk_free + 1);
 		return ;
 	}
-}
+}*/
 
 void    my_free(void *ptr)
 {
