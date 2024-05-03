@@ -161,7 +161,6 @@ void    *my_malloc(size_t size)
 	if (!free_chunk) {
 		return (res);
 	}
-	printf("Entering malloc \n");
 	res = insert_chunk(free_chunk, size);
 	printf("res : %p\n", res);
 	return (res);
@@ -176,9 +175,47 @@ void *get_chunk(void *addr) {
 	return (NULL);
 }
 
-void merge_chunk(t_chunk *first_chunk, t_chunk *second_chunk) {
-	first_chunk->size += second_chunk->size;
-	memset(second_chunk, 0, sizeof(t_chunk));
+//function reset a chunk
+
+void debug() {
+	t_chunk *buff = meta.first_chunk;
+	printf("DEBUG\n");
+	while (buff) {
+		printf("addr: %p size : %ld state : %d \n", buff->data_addr, buff->size, buff->state);
+		buff = buff->next;
+	}
+}
+
+void merge_chunk(t_chunk *chunk){
+	if (!chunk->next)
+		return ;
+	t_chunk *next = chunk->next;
+	t_chunk *prev = chunk->prev;
+	if (next->state == FREE) {
+		chunk->size += chunk->next->size;
+		if (chunk->next->next)
+		{
+			chunk->next->next->prev = chunk;
+			chunk->next = chunk->next->next;
+		}
+		else
+		{
+			meta.last_chunk = chunk;
+			chunk->next = NULL;
+		}
+		memset(next, 0, sizeof(t_chunk));
+	}
+	if (prev && prev->state == FREE) {
+		prev->size += chunk->size;
+		if (chunk->next) {
+			chunk->next->prev = prev;
+			prev->next = chunk->next;
+		} else {
+			prev->next = NULL;
+			meta.last_chunk = prev;
+		}
+		memset(chunk, 0, sizeof(t_chunk));
+	}
 }
 
 /*
@@ -206,6 +243,8 @@ void    my_free(void *ptr)
 		return ;
 	}
 	chunk->state = FREE;
+	merge_chunk(chunk);
+	debug();
 	//	optimize_memory();
 	//optimize memory -> assembler les block free qui se suivent et unmap les page non utilise
 }
