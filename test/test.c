@@ -70,4 +70,15 @@ Test(canary, overflow) {
 	my_free(s);
 }
 
+Test(my_malloc, new_meta_pages) {
+	int i = 0;
+
+	while (i < 1000) {
+		void * ptr = my_malloc(12);
+		cr_expect(ptr != NULL, "Failed to alloc ptr");
+		my_free(ptr);
+		i++;
+	}
+}
+
 //Test(my_free, free_first_chunk)

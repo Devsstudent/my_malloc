@@ -10,18 +10,21 @@ t_data		data;
 
 bool	init_heap(void) {
 	printf("INIT\n");
-	heap_data = mmap((void *)(4096 * 100000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_data = mmap((void *)(0x7ffe8ef4a000 + 4096), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_data){
 		return (false);
 	}
-	heap_metadata = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_metadata = mmap((void *)(4096), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_metadata) {
 		return(false);
 	}
+	meta.pages = 1;
 	printf("Base data addr : %p\n", heap_data);
 	t_chunk *first_chunk = new_chunk(heap_data, PAGE_SIZE, FREE);
+	if (!first_chunk) {
+		return (false);
+	}
 	meta.first_chunk = first_chunk;
-	meta.pages = 1;
 	data.pages = 1;
 	return (true);
 }
@@ -31,10 +34,29 @@ uint8_t	canary_random() {
 	return (uint8_t)rand();
 }
 
+bool ask_new_meta_page() {
+	printf("New page of meta requested\n");
+	void *new_meta = mremap(heap_metadata, PAGE_SIZE * meta.pages, PAGE_SIZE * meta.pages + 1, MREMAP_MAYMOVE);
+
+	if (!new_meta || new_meta != heap_metadata) {
+		fprintf(stderr, "mremap failed: %s, %ld\n", strerror(errno), PAGE_SIZE * meta.pages + 1);
+		return (false);
+	}
+	heap_metadata = new_meta;
+	printf("%p, size %ld, \n", heap_metadata, PAGE_SIZE * meta.pages + 1);
+	meta.pages += 1;
+	return (true);
+}
+
 t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	//We have to check if there is enough space, otherwise we have to ask for a new page
 
 	//Add a new chunk after the last chunk
+	if (meta.chunks_nb * sizeof(t_chunk) + sizeof(t_chunk) > meta.pages * PAGE_SIZE) {
+		if (!ask_new_meta_page()) {
+			return (NULL);
+		}
+	}
 	t_chunk *new = heap_metadata + (sizeof(t_chunk) * (meta.chunks_nb));
 	printf("ETA %d\n", state);
 	if (state == BUSY) {
@@ -135,13 +157,16 @@ void	*get_free_chunk(size_t size) {
 }
 
 //This add split a data_chunk into 2 chunk, 1 BUSY and 1 FREE
-void	split_data_chunk(t_chunk *chunk, size_t initial_data_size) {
+bool	split_data_chunk(t_chunk *chunk, size_t initial_data_size) {
 	t_chunk *_new_chunk;
 
 	if (chunk->size == initial_data_size)
-		return ;
+		return true;
 	printf("base size : %ld, chunk_size : %ld\n", initial_data_size, chunk->size);
 	_new_chunk = new_chunk(chunk->data_addr + chunk->size, initial_data_size - chunk->size, FREE);
+	if (!_new_chunk) {
+		return (false);
+	}
 	_new_chunk->prev = chunk;
 	if (chunk->next) {
 		_new_chunk->next = chunk->next;
@@ -149,6 +174,7 @@ void	split_data_chunk(t_chunk *chunk, size_t initial_data_size) {
 			chunk->next->next->prev = _new_chunk;
 	}
 	chunk->next = _new_chunk;
+	return (true);
 }
 
 void *insert_chunk(t_chunk *free_chunk, size_t size) {
@@ -160,7 +186,9 @@ void *insert_chunk(t_chunk *free_chunk, size_t size) {
 	free_chunk->canary = canary;
 	printf("CANANRY : %d\n", canary);
 	*(uint8_t *)(free_chunk->data_addr + (size - 1)) = canary;
-	split_data_chunk(free_chunk, initial_data_size);
+	if (!split_data_chunk(free_chunk, initial_data_size)) {
+		return (NULL);
+	}
 	printf("chunk info : %ld %d new chunk : %ld %d\n", free_chunk->size, free_chunk->state, free_chunk->next->size, free_chunk->next->state);
 	return (free_chunk->data_addr);
 }
