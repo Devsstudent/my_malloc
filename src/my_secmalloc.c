@@ -34,10 +34,10 @@ t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	if (state == BUSY) {
 		uint8_t	canary = 42;
 		new->canary = canary;
-		*(uint8_t *)(data_addr + size) = canary;
+		*(uint8_t *)(data_addr + (size - 1)) = canary;
 	}
 	new->data_addr = data_addr;
-	new->size = size + 1;
+	new->size = size;
 	new->state = state;
 	new->next = NULL;
 	new->prev = NULL;
@@ -93,28 +93,28 @@ bool ask_new_data_page(size_t size) {
 	printf("%p, size %ld, \n", heap_data, PAGE_SIZE * data.pages + size);
 	t_chunk *last_chunk = meta.last_chunk;
 	last_chunk->size = last_chunk->size + (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) :(((size_t) (size / 4096) + 1) * PAGE_SIZE));
-	data.pages += (size + 1 % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
+	data.pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
 	return (true);
 }
 
 void	*get_free_chunk(size_t size) {
-	if (meta.first_chunk == meta.last_chunk && meta.first_chunk->state == FREE && meta.first_chunk->size >= size + 1) {
+	if (meta.first_chunk == meta.last_chunk && meta.first_chunk->state == FREE && meta.first_chunk->size >= size) {
 		return (meta.first_chunk);
 	}
 	
 	//else check if we have a free chunk that could contains the new requested data
 	t_chunk *ptr = meta.first_chunk;
 
-	if (ptr->state == FREE && ptr->size >= size + 1) 
+	if (ptr->state == FREE && ptr->size >= size) 
 		return (ptr);
 
 	while (ptr) {
 		//	printf("we are in the loop: state %d size %ld block: %p\n", ptr->state, ptr->size, ptr);
-		if (ptr->state == FREE && ptr->size >= size + 1)
+		if (ptr->state == FREE && ptr->size >= size)
 			return (ptr);
 		printf("size %ld, size_max %ld, data: %ld\n", size, PAGE_SIZE * data.pages - (ptr->data_addr - heap_data), data.pages);
-		if (size + 1 > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
-			if (!ask_new_data_page(size + 1)) {
+		if (size > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
+			if (!ask_new_data_page(size)) {
 				printf("failed request new page\n");
 				return (NULL);
 			}
@@ -162,11 +162,11 @@ void    *my_malloc(size_t size)
 			return (res);
 		}
 	}
-	t_chunk *free_chunk = get_free_chunk(size);
+	t_chunk *free_chunk = get_free_chunk(size + 1);
 	if (!free_chunk) {
 		return (res);
 	}
-	res = insert_chunk(free_chunk, size);
+	res = insert_chunk(free_chunk, size + 1);
 	printf("res : %p\n", res);
 	return (res);
 }
