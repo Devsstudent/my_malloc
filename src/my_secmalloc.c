@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 #include "my_secmalloc.private.h"
+#include <stdlib.h>
+# include <openssl/rand.h>
 
 void	*heap_data;
 void	*heap_metadata;
@@ -24,16 +26,21 @@ bool	init_heap(void) {
 	return (true);
 }
 
-//New chunk -> byte_before, block_addr, size
+uint8_t	canary_random() {
+	srand(time(NULL));
+	return (uint8_t)rand();
+}
 
 t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	//We have to check if there is enough space, otherwise we have to ask for a new page
 
 	//Add a new chunk after the last chunk
 	t_chunk *new = heap_metadata + (sizeof(t_chunk) * (meta.chunks_nb));
+	printf("ETA %d\n", state);
 	if (state == BUSY) {
-		uint8_t	canary = 42;
+		uint8_t	canary = canary_random();
 		new->canary = canary;
+		printf("CANANRY : %d\n", canary);
 		*(uint8_t *)(data_addr + (size - 1)) = canary;
 	}
 	new->data_addr = data_addr;
@@ -149,6 +156,10 @@ void *insert_chunk(t_chunk *free_chunk, size_t size) {
 	printf("size %ld address %p\n", initial_data_size, free_chunk->data_addr);
 	free_chunk->state = BUSY;
 	free_chunk->size = size;
+	uint8_t	canary = canary_random();
+	free_chunk->canary = canary;
+	printf("CANANRY : %d\n", canary);
+	*(uint8_t *)(free_chunk->data_addr + (size - 1)) = canary;
 	split_data_chunk(free_chunk, initial_data_size);
 	printf("chunk info : %ld %d new chunk : %ld %d\n", free_chunk->size, free_chunk->state, free_chunk->next->size, free_chunk->next->state);
 	return (free_chunk->data_addr);
