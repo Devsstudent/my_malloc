@@ -1,20 +1,21 @@
 #define _GNU_SOURCE
 #include "my_secmalloc.private.h"
 #include <stdlib.h>
-# include <openssl/rand.h>
 
 void	*heap_data;
 void	*heap_metadata;
 t_metadata	meta;
 t_data		data;
 
+//Know when the program end to make a report of the leaks 
+//Find a way to get the adress of the heap
 bool	init_heap(void) {
 	printf("INIT\n");
-	heap_data = mmap((void *)(0x7ffe8ef4a000 + 4096), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_data = mmap((void *)(0xaaab32ea64000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_data){
 		return (false);
 	}
-	heap_metadata = mmap((void *)(4096), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_metadata = mmap((void *)(0xaaab32ea4000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_metadata) {
 		return(false);
 	}
@@ -275,6 +276,19 @@ void optimize_memory(t_chunk *chunk_free) {
 	}
 }*/
 
+size_t	free_data_in_bytes() {
+	t_chunk	*buff = meta.first_chunk;
+	size_t	bytes = 0;
+
+	while (buff) {
+		if (buff->state == FREE) {
+			bytes += (size_t) buff->size;
+		}
+		buff = buff->next;
+	}
+	return (bytes);
+}
+
 void    my_free(void *ptr)
 {
 	//Search for the ptr in the meta
@@ -297,7 +311,25 @@ void    my_free(void *ptr)
 	}
 	chunk->state = FREE;
 	merge_chunk(chunk);
-	debug();
+	printf("total : %ld\n", free_data_in_bytes());
+	size_t	free_space = free_data_in_bytes();
+	if (free_space == data.pages * PAGE_SIZE) {
+		//We free the data
+		printf("Unmap : %p %ld %ld\n", heap_data, free_space, data.pages * PAGE_SIZE);
+		if (munmap(heap_data, data.pages * PAGE_SIZE) < 0 ) {
+			return ;
+		}
+		if (munmap(heap_metadata, meta.pages * PAGE_SIZE) < 0 ) {
+			return ;
+		}
+		heap_data = NULL;
+		heap_metadata = NULL;
+		data.pages = 0;
+		meta.pages = 0;
+		meta.first_chunk = NULL;
+		meta.last_chunk = NULL;
+	}
+//	debug();
 	//	optimize_memory();
 	//optimize memory -> assembler les block free qui se suivent et unmap les page non utilise
 }

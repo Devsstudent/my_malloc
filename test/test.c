@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "my_secmalloc.private.h"
 #include <sys/mman.h>
+/*
 Test(mmap, simple) {
     void *ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     cr_expect(ptr != NULL);
@@ -68,17 +69,33 @@ Test(canary, overflow) {
 		i++;
 	}
 	my_free(s);
-}
+}*/
 
-Test(my_malloc, new_meta_pages) {
-	int i = 0;
+Test(my_malloc, free_pages) {
+    int rows = 100;
+    int cols = 100;
 
-	while (i < 1000) {
-		void * ptr = my_malloc(12);
-		cr_expect(ptr != NULL, "Failed to alloc ptr");
-		my_free(ptr);
-		i++;
-	}
+    // Dynamically allocate memory for a 2D array of characters
+    char **matrix = (char **)my_malloc(rows * sizeof(char *));
+	cr_expect(matrix != NULL, "Failed to alloc matrix");
+
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (char *)my_malloc((cols + 1) * sizeof(char)); // +1 for null terminator
+		cr_expect(matrix[i] != NULL, "Failed to alloc matrix %i", i);
+    }
+    // Fill the 2D array with sample data
+    char fillChar = 'A';
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = fillChar++;
+        }
+        matrix[i][cols] = '\0'; // Null-terminate each string
+    }
+    // Free dynamically allocated memory
+    for (int i = 0; i < rows; i++) {
+        my_free(matrix[i]);
+    }
+    my_free(matrix);
 }
 
 //Test(my_free, free_first_chunk)

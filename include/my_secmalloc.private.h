@@ -10,6 +10,7 @@
 # include <string.h>
 # include <errno.h>
 # include <stdint.h>
+# include <time.h>
 
 # define PAGE_SIZE 4096
 
