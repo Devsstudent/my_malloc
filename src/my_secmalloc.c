@@ -1,6 +1,11 @@
 #define _GNU_SOURCE
 #include "my_secmalloc.private.h"
 #include <stdlib.h>
+#include <alloca.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 void	*heap_data;
 void	*heap_metadata;
@@ -10,12 +15,11 @@ t_data		data;
 //Know when the program end to make a report of the leaks 
 //Find a way to get the adress of the heap
 bool	init_heap(void) {
-	printf("INIT\n");
-	heap_data = mmap((void *)(0xaaab32ea64000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_data = mmap((void *)(0xaaab836e0000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_data){
 		return (false);
 	}
-	heap_metadata = mmap((void *)(0xaaab32ea4000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_metadata = mmap((void *)(0xaaab835C6500), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_metadata) {
 		return(false);
 	}
@@ -196,6 +200,7 @@ void *insert_chunk(t_chunk *free_chunk, size_t size) {
 
 void    *my_malloc(size_t size)
 {
+	addLog("Appel a malloc, for block of size %ld\n", size);
 	void *res = NULL;
 	if (!heap_data) {
 		if (!init_heap()) {
@@ -207,9 +212,11 @@ void    *my_malloc(size_t size)
 		return (res);
 	}
 	res = insert_chunk(free_chunk, size + 1);
-	printf("res : %p\n", res);
+	//printf("res : %p\n", res);
+	addLog("Address allocated by malloc: %p, size : %d\n", res, size);
 	return (res);
 }
+
 void *get_chunk(void *addr) {
 	for (size_t i = 0; i < meta.chunks_nb; i++) {
 		t_chunk *chunk = meta.first_chunk + i;
@@ -289,24 +296,53 @@ size_t	free_data_in_bytes() {
 	return (bytes);
 }
 
+void	addLog(char *format, ...) {
+	char *buffer = (char *)alloca(256);
+	char *logFile = getenv("MSM_OUTPUT");
+	if (!logFile) {
+		return ;
+	}
+	int fd = open(logFile, O_CREAT | O_APPEND | O_RDWR, 0640);
+	if (fd < 0) {
+		perror (buffer);
+		write(2, buffer, strlen(buffer));
+		return ;
+	}
+	va_list args;
+	va_start (args, format);
+	if (vsnprintf (buffer, 256,format, args) < 0)
+	{
+		perror (buffer);
+		write(2, buffer, strlen(buffer));
+		va_end (args);
+		return ;
+	}
+	write(fd, buffer, strlen(buffer));
+	va_end (args);
+}
+
 void    my_free(void *ptr)
 {
 	//Search for the ptr in the meta
 	//Maybe check on a au moins 1 chunk ?
+	addLog("Appel a Free, addr : %p\n", ptr);
 	if (!ptr) {
 		return ;
 	}
 	t_chunk *chunk = get_chunk(ptr);
 	printf("FREE\n");
 	if (!chunk) {
+		addLog("Trying to free :%p failed\nError: unallocated\n", ptr);
 		return ;
 	}
 	if (chunk->state == FREE) {
+		addLog("Trying to free :%p failed\nError: double free\n", ptr);
 		return ;
 	}
 	printf("%i, %i\n", *(uint8_t*)(chunk->data_addr + chunk->size - 1), chunk->canary);
 	if (*(uint8_t *)(chunk->data_addr + chunk->size - 1) != chunk->canary) {
 		printf("EROORORRRORORO de CANNANANARY\n");
+		addLog("Trying to free :%p\nError: Canary failed\n", ptr);
 		return ;
 	}
 	chunk->state = FREE;
@@ -335,16 +371,48 @@ void    my_free(void *ptr)
 }
 void    *my_calloc(size_t nmemb, size_t size)
 {
-    (void) nmemb;
-    (void) size;
-    return NULL;
+	addLog("Appel a Calloc, for a size of %ld\n", nmemb * size);
+	void *res = my_malloc(nmemb * size);
+	if (!res) {
+		return (NULL);
+	}
+	memset(res, 0, nmemb * size);
+	addLog("Retunr Address of calloc: %p, size : %d\n", res, size * nmemb);
+	return (res);
 }
 
 void    *my_realloc(void *ptr, size_t size)
 {
-    (void) ptr;
-    (void) size;
-    return NULL;
+	addLog("Appel a realloc at addr : %p for a new size of %ld\n", ptr, size);
+	void *res = NULL;
+	if (size == 0 && ptr) {
+		my_free(ptr);
+		return (res);
+	}
+			if (!ptr && size > 0) {
+		res = my_malloc(size);
+		if (res) {
+			return (res);
+		}
+	}
+	t_chunk *info_ptr = get_chunk(ptr);
+	if (info_ptr) {
+		printf("info size %ld, size %ld\n", info_ptr->size, size);
+		if (info_ptr->size >= size) {
+			insert_chunk(info_ptr, size + 1);
+			return (ptr);
+		}
+		else {
+			res = my_malloc(size);
+			if (!res) {
+				return (ptr);
+			}
+			memcpy(res, ptr, info_ptr->size - 1);
+			my_free(ptr);
+			return (res);
+		}
+	}
+	return (NULL);
 }
 
 #ifdef DYNAMIC
