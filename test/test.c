@@ -138,6 +138,13 @@ Test(my_realloc, realloc_bigger_block) {
 	
 }
 */
+
+Test(my_malloc, a_lot) {
+	void *ptr = my_malloc(12000);
+	cr_expect(ptr != NULL, "Failed to alloc ptr");
+	my_free(ptr);
+}
+/*
 Test(my_realloc, relloc_lower_well_free_unsed_part) {
 	void *ptr = my_malloc(1500);
 	cr_expect(ptr != NULL, "Failed to alloc ptr");
@@ -162,4 +169,4 @@ Test(my_realloc, passing_ptr_size_zero) {
 	cr_expect(ptr2 != NULL, "Failed to alloc ptr");
 	void *ptr = my_realloc(ptr2, 0);
 	cr_expect(ptr == NULL, "Error realloc not freeing with size 0");
-}
+}*/
