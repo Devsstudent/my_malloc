@@ -30,6 +30,7 @@ typedef struct chunk {
 
 typedef struct data {
 	size_t pages;
+	size_t total;
 }	t_data;
 
 typedef struct metadata {
@@ -38,7 +39,6 @@ typedef struct metadata {
 	t_chunk	*first_chunk;
 	t_chunk	*last_chunk;
 }	t_metadata;
-
 
 // sentez vous libre de modifier ce header comme vous le souhaitez
 

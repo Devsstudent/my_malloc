@@ -140,10 +140,27 @@ Test(my_realloc, realloc_bigger_block) {
 */
 
 Test(my_malloc, a_lot) {
-	void *ptr = my_malloc(12000);
+	void *ptr = my_malloc(1200);
 	cr_expect(ptr != NULL, "Failed to alloc ptr");
+	void *pt2 = my_malloc(1200);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(3);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(3);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(3);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(3);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(1200);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(4097);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(12000);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
 	my_free(ptr);
 }
+
 /*
 Test(my_realloc, relloc_lower_well_free_unsed_part) {
 	void *ptr = my_malloc(1500);
@@ -170,3 +187,5 @@ Test(my_realloc, passing_ptr_size_zero) {
 	void *ptr = my_realloc(ptr2, 0);
 	cr_expect(ptr == NULL, "Error realloc not freeing with size 0");
 }*/
+
+//Ajouter un test pour la demande d'une nouvelle meta page

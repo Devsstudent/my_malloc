@@ -24,11 +24,11 @@ bool	init_heap(void) {
 		//initialize data struct
 		addLog("Already allocated Base Address\n");
 	}*/
-	heap_metadata = mmap((void *)(0x1000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_metadata = mmap((void *)(0x61f546481000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_metadata) {
 		return(false);
 	}
-	heap_data = mmap((void *)(0xa000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_data = mmap((void *)(0x61f54648f000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_data){
 		return (false);
 	}
@@ -51,15 +51,32 @@ uint8_t	canary_random() {
 
 bool ask_new_meta_page() {
 	addLog("New page of meta data requested\n");
-	void *new_meta = mremap(heap_metadata, PAGE_SIZE * meta.pages, PAGE_SIZE * meta.pages + 1, MREMAP_MAYMOVE);
+	void *new_meta = mremap(heap_metadata, PAGE_SIZE * meta.pages, PAGE_SIZE * meta.pages + PAGE_SIZE - 1, MREMAP_MAYMOVE);
 
 	if (!new_meta || new_meta != heap_metadata) {
-		fprintf(stderr, "mremap failed: %s, %ld\n", strerror(errno), PAGE_SIZE * meta.pages + 1);
+		addLog("Bruh %p %p\n", new_meta, heap_metadata);
+		addLog("mremap failed: %s, %ld\n", strerror(errno), PAGE_SIZE * meta.pages + 1);
 		return (false);
 	}
 	heap_metadata = new_meta;
 	printf("META PAGE : %p, size %ld, \n", heap_metadata, PAGE_SIZE * meta.pages + 1);
 	meta.pages += 1;
+	//new free chunk
+//	t_chunk *tmp = meta.last_chunk;
+
+//	size_t chunkbypage = PAGE_SIZE / sizeof(t_chunk);
+//	meta.last_chunk = heap_metadata + sizeof(t_chunk) * (meta.pages - 1) * chunkbypage;
+//	meta.last_chunk->data_addr = tmp->data_addr;
+//	meta.last_chunk->state = tmp->state;
+//	meta.last_chunk->size = tmp->size;
+//	meta.last_chunk->canary = tmp->canary;
+//	meta.last_chunk.next = tmp.next
+//	Rever le next et le prev
+//	tmp->next = meta.last_chunk;
+//	tmp->size = 0;
+//	meta.last_chunk->prev = tmp;
+//	addLog("ETA %p\n", meta.last_chunk);
+	meta.chunks_nb += 1;
 	return (true);
 }
 
@@ -68,13 +85,15 @@ t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 
 	//Add a new chunk after the last chunk
 	addLog("New chunk %d\n", size);
+	addLog("NEW META PAGE ? %ld, %ld\n", meta.chunks_nb * sizeof(t_chunk) + sizeof(t_chunk), meta.pages * PAGE_SIZE);
 	if (meta.chunks_nb * sizeof(t_chunk) + sizeof(t_chunk) > meta.pages * PAGE_SIZE) {
 		if (!ask_new_meta_page()) {
 			return (NULL);
 		}
 	}
+	addLog("ETA1 \n");
 	t_chunk *new = heap_metadata + (sizeof(t_chunk) * (meta.chunks_nb));
-	//addLog("ETA %d\n", state);
+	addLog("ETA2 %p %i\n", new, state);
 	if (state == BUSY) {
 		uint8_t	canary = canary_random();
 		new->canary = canary;
@@ -128,7 +147,9 @@ void	*create_chunk(size_t size, t_chunk *chunk) {
 
 bool ask_new_data_page(size_t size) {
 	addLog("New page of data requested\n");
-	void *new_data = mremap(heap_data, PAGE_SIZE * data.pages, PAGE_SIZE * data.pages + size, MREMAP_MAYMOVE);
+
+	//with thoses flags, we are getting anoter address, it seems, i have to compare head_data valuue and new_data
+	void *new_data = mremap(heap_data, PAGE_SIZE * data.pages, PAGE_SIZE * data.pages + size, MREMAP_MAYMOVE, heap_data);
 
 	if (!new_data || new_data != heap_data) {
 		fprintf(stderr, "mremap failed: %s, %ld\n", strerror(errno), PAGE_SIZE * data.pages + size);
@@ -145,30 +166,34 @@ bool ask_new_data_page(size_t size) {
 void	*get_free_chunk(size_t size) {
 //	addLog("Looking for chunk, %p\n", meta.first_chunk);
 	if (meta.first_chunk == meta.last_chunk && meta.first_chunk->state == FREE && meta.first_chunk->size >= size) {
-//		addLog("Looking for chunk, result in :%p\n", meta.first_chunk);
+		addLog("Looking for chunk, result in :%p\n", meta.first_chunk);
 		return (meta.first_chunk);
 	}
 	
 	//else check if we have a free chunk that could contains the new requested data
 	t_chunk *ptr = meta.first_chunk;
 
-	addLog("Looking for chunk 2\n");
-	if (ptr->state == FREE && ptr->size >= size) 
+	addLog("Looking for chunk 2: %ld ptr size %ld ptr state %d, test %d\n", size, ptr->size, ptr->state, (ptr->state == FREE && ptr->size >= size));
+	if (ptr->state == FREE && ptr->size >= size)  {
+		addLog("ptdr %p\n", ptr);
 		return (ptr);
+	}
+	addLog("POPNERT %ld %ld\n", data.total + size, PAGE_SIZE * data.pages);
+	if (data.total + size > PAGE_SIZE * data.pages) {
+		if (!ask_new_data_page(size)) {
+			addLog("failed request new page\n");
+			return (NULL);
+		}
+		ptr = meta.last_chunk;
+
+	}
 
 	while (ptr) {
 	//	addLog("we are in the loop: state %d size %ld block: %p\n", ptr->state, ptr->size, ptr);
 		if (ptr->state == FREE && ptr->size >= size)
 			return (ptr);
 	//	addLog("size %ld, size_max %ld, data: %ld\n", size, PAGE_SIZE * data.pages - (ptr->data_addr - heap_data), data.pages);
-		if (size > PAGE_SIZE * data.pages - (ptr->data_addr - heap_data)) {
-			if (!ask_new_data_page(size)) {
-				addLog("failed request new page\n");
-				return (NULL);
-			}
-			ptr = meta.last_chunk;
-			continue ;
-		}
+//		addLog("size %ld, page %ld\n", size, PAGE_SIZE * data.pages - (ptr->data_addr - heap_data));
 		ptr = ptr->next;
 	}
 	//printf("STATE %d Chunks %ld\n", ptr->state, meta.chunks_nb);
@@ -181,8 +206,9 @@ bool	split_data_chunk(t_chunk *chunk, size_t initial_data_size) {
 
 	if (chunk->size == initial_data_size)
 		return true;
-	printf("base size : %ld, chunk_size : %ld\n", initial_data_size, chunk->size);
+	addLog("base size : %ld, chunk_size : %ld, metasize %ld\n", initial_data_size, chunk->size, meta.pages * PAGE_SIZE);
 	_new_chunk = new_chunk(chunk->data_addr + chunk->size, initial_data_size - chunk->size, FREE);
+	addLog("after \n");
 	if (!_new_chunk) {
 		return (false);
 	}
@@ -212,11 +238,25 @@ void *insert_chunk(t_chunk *free_chunk, size_t size) {
 	return (free_chunk->data_addr);
 }
 
+void debug() {
+	t_chunk *buff = meta.first_chunk;
+//	printf("DEBUG\n");
+	size_t	size = 0;
+	while (buff) {
+//		printf("addr: %p size : %ld state : %d \n", buff->data_addr, buff->size, buff->state);
+		if (buff->state == BUSY) {
+			size += buff->size;
+		}
+		buff = buff->next;
+	}
+	addLog("Used : %ld\n", size);
+}
+
 void    *my_malloc(size_t size)
 {
 	//addLog("Appel a malloc, for block of size %ld\n", size);
 	//addLog("PID: %ld, heap_data %p\n", getpid(), heap_data);
-	addLog("full size : %ld\n", data.pages * PAGE_SIZE);
+	//addLog("full size : %ld\n", data.pages * PAGE_SIZE);
 	void *res = NULL;
 	if (!heap_data) {
 		if (!init_heap()) {
@@ -232,10 +272,10 @@ void    *my_malloc(size_t size)
 	}
 	res = insert_chunk(free_chunk, size + 1);
 	addLog("Address allocated by malloc: %p, size : %d\n", res, size);
-	printf("Full size : %ld\n", data.pages * PAGE_SIZE);
-	printf("full size meta : %ld used %ld\n", meta.pages * PAGE_SIZE, meta.chunks_nb * sizeof(t_chunk));
-	printf("Address allocated by malloc: %p, size : %ld\n", res, size);
-	addLog("Full size : %ld\n", data.pages * PAGE_SIZE);
+	addLog("full size meta : %ld used %ld\n", meta.pages * PAGE_SIZE, meta.chunks_nb * sizeof(t_chunk));
+	addLog("Full size : %ld, used %ld\n", data.pages * PAGE_SIZE, data.total);
+	debug();
+	data.total += size + 1;
 	return (res);
 }
 
@@ -251,14 +291,6 @@ void *get_chunk(void *addr) {
 
 //function reset a chunk
 
-void debug() {
-	t_chunk *buff = meta.first_chunk;
-	printf("DEBUG\n");
-	while (buff) {
-		printf("addr: %p size : %ld state : %d \n", buff->data_addr, buff->size, buff->state);
-		buff = buff->next;
-	}
-}
 
 void merge_chunk(t_chunk *chunk){
 	if (!chunk->next)
@@ -362,6 +394,7 @@ void    my_free(void *ptr)
 		addLog("Trying to free :%p failed\nError: double free\n", ptr);
 		return ;
 	}
+	data.total -= chunk->size;
 	printf("%i, %i\n", *(uint8_t*)(chunk->data_addr + chunk->size - 1), chunk->canary);
 	if (*(uint8_t *)(chunk->data_addr + chunk->size - 1) != chunk->canary) {
 	//	printf("EROORORRRORORO de CANNANANARY\n");
