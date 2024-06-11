@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-#include <dlfcn.h>
 #include "my_secmalloc.private.h"
 
 void			*heap_data = NULL;
@@ -92,8 +90,11 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	new->prev = info.last_chunk;
 	info.nb_chunks += 1;
 	t_chunk *last = info.last_chunk;
-	last->next = new;
+	if (last) {
+		 last->next = new;
+	}
 	info.last_chunk = new;
+	return (new);
 }
 
 bool	chunk_with_enough_space(size_t size, t_chunk **chunk_addr) {
@@ -113,20 +114,24 @@ bool	insert_into_chunk(t_chunk *chunk, size_t size) {
 
 	t_chunk *next_chunk = chunk->next;
 	size_t	free_bytes = chunk->size - size;
-	t_chunk *new_chunk_free = new_chunk(chunk->data_addr + chunk->size, free_bytes, FREE);
-	if (!new_chunk) {
+	t_chunk *new_chunk_free = new_chunk(chunk->data_addr + size, free_bytes, FREE);
+	printf("%ld chunksize %ld size %ld\n", free_bytes, chunk->size, size);
+	if (!new_chunk_free) {
 		return (false);
 	}
 	chunk->state = BUSY;
 	uint64_t	canary = canary_random();
 	chunk->canary = canary;
-	(*((uint64_t *)(chunk->data_addr + (size - sizeof(uint64_t))))) = canary;
+	(*((uint64_t *)(chunk->data_addr + size - sizeof(uint64_t)))) = canary;
+	printf("YES\n");
 	chunk->next = new_chunk_free;
+	chunk->size = size;
 	new_chunk_free->prev = chunk;
 	if (next_chunk) {
 		new_chunk_free->next = next_chunk;
 		next_chunk->prev = new_chunk_free;
 	}
+	
 	return (true);
 }
 
@@ -135,6 +140,7 @@ void    *my_malloc(size_t size) {
 		setup_heap();
 	}
 	t_chunk *chunk_addr = NULL;
+//Get le previous chunk pour avoir la size du chunk
 	if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
 		//new_data_page
 		//setup_chunk_addr

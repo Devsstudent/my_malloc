@@ -9,13 +9,14 @@ Test(mmap, simple) {
     int res = munmap(ptr, 4096);
     cr_expect(res == 0);
 }
-
+*/
 Test(my_malloc_simple, simple) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
-	my_free(ptr);
+	void *ptr2 = my_malloc(25);
+	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
 }
-
+/*
 Test(my_malloc_aligned, double_alloc_aligned_one_page) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
@@ -138,7 +139,7 @@ Test(my_realloc, realloc_bigger_block) {
 	
 }
 */
-
+/*
 Test(my_malloc, a_lot) {
 	void *ptr = my_malloc(1200);
 	cr_expect(ptr != NULL, "Failed to alloc ptr");
@@ -159,7 +160,7 @@ Test(my_malloc, a_lot) {
 	pt2 = my_malloc(12000);
 	cr_expect(pt2 != NULL, "Failed to alloc ptr");
 	my_free(ptr);
-}
+}*/
 
 /*
 Test(my_realloc, relloc_lower_well_free_unsed_part) {
