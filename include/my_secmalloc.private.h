@@ -11,6 +11,12 @@
 # include <errno.h>
 # include <stdint.h>
 # include <time.h>
+# include <stdlib.h>
+# include <stdarg.h>
+# include <fcntl.h>
+# include <stdbool.h>
+
+
 
 # define PAGE_SIZE 4096
 

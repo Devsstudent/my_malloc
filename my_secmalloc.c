@@ -6,6 +6,25 @@ void			*heap_data = NULL;
 void			*heap_meta = NULL;
 t_info_malloc	info;
 
+uint64_t canary_random() {
+    uint64_t random_value;
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd == -1) {
+        perror("Failed to open /dev/urandom");
+        exit(EXIT_FAILURE);
+    }
+
+    ssize_t result = read(fd, &random_value, sizeof(random_value));
+    if (result < 0) {
+        perror("Failed to read from /dev/urandom");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    close(fd);
+    return random_value;
+}
+
 void	addLog(char *format, ...) {
 	char *buffer = (char *)alloca(256);
 	char *logFile = getenv("MSM_OUTPUT");
@@ -34,12 +53,12 @@ void	addLog(char *format, ...) {
 	close(fd);
 }
 
-bool	setup_heap {
-	heap_data = mmap((void *)(), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+bool	setup_heap() {
+	heap_data = mmap((void *)(0x56128d551000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_data) {
 		return (false);
 	}
-	heap_meta = mmap((void *)(), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_meta = mmap((void *)(0x56128d55f000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_meta) {
 		return (false);
 	}
@@ -69,7 +88,7 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	new->data_addr = data_addr;
 	new->state = state;
 	new->size = size;
-	new->next = NULL
+	new->next = NULL;
 	new->prev = info.last_chunk;
 	info.nb_chunks += 1;
 	t_chunk *last = info.last_chunk;
@@ -77,12 +96,12 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	info.last_chunk = new;
 }
 
-bool	chunk_with_enough_space(size_t size, void **chunk_addr) {
+bool	chunk_with_enough_space(size_t size, t_chunk **chunk_addr) {
 	t_chunk *buff = info.first_chunk;
 
 	while (buff) {
 		if (buff->size >= size && buff->state == FREE) {
-			*chunk_addr = buff
+			*chunk_addr = buff;
 			return (true);
 		}
 		buff = buff->next;
@@ -90,19 +109,40 @@ bool	chunk_with_enough_space(size_t size, void **chunk_addr) {
 	return (false);
 }
 
+bool	insert_into_chunk(t_chunk *chunk, size_t size) {
+
+	t_chunk *next_chunk = chunk->next;
+	size_t	free_bytes = chunk->size - size;
+	t_chunk *new_chunk_free = new_chunk(chunk->data_addr + chunk->size, free_bytes, FREE);
+	if (!new_chunk) {
+		return (false);
+	}
+	chunk->state = BUSY;
+	uint64_t	canary = canary_random();
+	chunk->canary = canary;
+	(*((uint64_t *)(chunk->data_addr + (size - sizeof(uint64_t))))) = canary;
+	chunk->next = new_chunk_free;
+	new_chunk_free->prev = chunk;
+	if (next_chunk) {
+		new_chunk_free->next = next_chunk;
+		next_chunk->prev = new_chunk_free;
+	}
+	return (true);
+}
+
 void    *my_malloc(size_t size) {
 	if (!heap_data) {
 		setup_heap();
 	}
-	void *chunk_addr = NULL
+	t_chunk *chunk_addr = NULL;
 	if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
 		//new_data_page
 		//setup_chunk_addr
 	}
-	//Split le chunk_addr en 2 (BUSY et FREE)
-
-//	return addr
-	
+	if (!insert_into_chunk(chunk_addr, size + sizeof(uint64_t))) {
+		return 0;
+	}
+	return chunk_addr->data_addr;
 }
 
 void    my_free(void *ptr) {
