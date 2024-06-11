@@ -25,8 +25,19 @@ typedef struct chunk {
 	size_t			size;
 	struct chunk	*next;
 	struct chunk	*prev;
-	uint8_t			canary;
+	uint64_t	canary;
 }	t_chunk;
+
+
+typedef struct info_malloc {
+	size_t	nb_data_pages;
+	size_t	nb_meta_pages;
+	size_t	nb_chunks;
+	t_chunk	*first_chunk;
+	t_chunk	*last_chunk;
+	size_t	total_data_bytes;
+	size_t	total_meta_bytes;
+}	t_info_malloc;
 
 typedef struct data {
 	size_t pages;

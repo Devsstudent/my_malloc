@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -I./include -Wall -Wextra -Werror -L ./lib
+CFLAGS = -I./include -Wall -Wextra -Werror -L ./lib -g3
 PRJ = my_secmalloc
 OBJS = src/my_secmalloc.o
 SLIB = lib${PRJ}.a
