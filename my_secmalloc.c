@@ -91,13 +91,16 @@ bool	new_meta_page() {
 	return (true);
 }
 
+
+//Peut etre je vais pouvoir remove le state car j'ajoute que des block free
 //MetaInformationOnly
 t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	if (!data_addr) {
 		return (NULL);
 	}
 	//A voir si pas <=
-	if (get_meta_page_left() < size) {
+	printf("%ld %ld\n", get_meta_page_left(), sizeof(t_chunk));
+	if (get_meta_page_left() < sizeof(t_chunk)) {
 		new_meta_page();
 	}
 	printf("nb chunk %i addr %p\n", info.nb_chunks, heap_meta + (sizeof(t_chunk) * info.nb_chunks));
@@ -110,6 +113,7 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	new->next = NULL;
 	new->prev = info.last_chunk;
 	info.nb_chunks += 1;
+	info.total_meta_bytes += sizeof(t_chunk);
 	t_chunk *last = info.last_chunk;
 	if (last) {
 		 last->next = new;
@@ -146,6 +150,7 @@ bool	insert_into_chunk(t_chunk *chunk, size_t size) {
 	(*((uint64_t *)(chunk->data_addr + size - sizeof(uint64_t)))) = canary;
 	chunk->next = new_chunk_free;
 	chunk->size = size;
+	info.total_data_bytes += size;
 	new_chunk_free->prev = chunk;
 	if (next_chunk) {
 		new_chunk_free->next = next_chunk;
@@ -159,10 +164,12 @@ bool	new_data_pages(size_t size) {
 	void *heap_data_remaped = mremap(heap_data, PAGE_SIZE * info.nb_data_pages, PAGE_SIZE * info.nb_data_pages + size, MREMAP_MAYMOVE);
 	if (!heap_data_remaped) {
 		printf("mmremap failed\n");
+		exit(1);
 		return (false);
 	}
 	if (heap_data_remaped != heap_data) {
 		printf("mmreamp moved the base addr\n");
+		exit(1);
 		return (false);
 	}
 	t_chunk *last_chunk = info.last_chunk;
