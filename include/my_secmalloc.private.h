@@ -5,6 +5,7 @@
 # include <stdio.h>
 # include <alloca.h>
 # include <unistd.h>
+# define _GNU_SOURCE
 # include <sys/mman.h>
 # include <stdbool.h>
 # include <string.h>

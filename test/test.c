@@ -16,21 +16,30 @@ Test(my_malloc_simple, simple) {
 	void *ptr2 = my_malloc(25);
 	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
 }
-/*
+
 Test(my_malloc_aligned, double_alloc_aligned_one_page) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
 	void *ptr2 = my_malloc(25);
-	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + 1, "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
+	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + 1 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
 	void *ptr3 = my_malloc(2500);
-	cr_expect((size_t) ptr3 == (size_t) ptr + 12 + 25 + 2, "Not aligned: %lx -%lx\n", (size_t)ptr3, (size_t)ptr + 12 + 25);
+	cr_expect((size_t) ptr3 == (size_t) ptr + 12 + 25 + 2 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr3, (size_t)ptr + 12 + 25);
 	void *ptr4 = my_malloc(1);
-	cr_expect((size_t) ptr4 == (size_t) ptr + 12 + 25 + 2500 + 3, "Not aligned: %lx -%lx\n", (size_t)ptr4, (size_t)ptr + 12 + 25 + 2500);
+	cr_expect((size_t) ptr4 == (size_t) ptr + 12 + 25 + 2500 + 3 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr4, (size_t)ptr + 12 + 25 + 2500);
 	my_free(ptr);
 	my_free(ptr2);
 	my_free(ptr3);
 	my_free(ptr4);
 }
+
+Test(my_malloc, null) {
+	void *ptr = my_malloc(0);
+	cr_expect(ptr == NULL, "Failed to alloc");
+}
+
+Test(my_malloc, last_chunk_not_free) {
+}
+/*
 Test(my_malloc_more_pages, more_pages) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
@@ -38,20 +47,31 @@ Test(my_malloc_more_pages, more_pages) {
 	cr_expect(ptr1 != NULL, "Failed to alloc");
 	void *ptr2 = my_malloc(4000);
 	cr_expect(ptr2 != NULL, "Failed to alloc");
-	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + 200 + 2, "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12 + 200);
+	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + 200 + 2 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12 + 200);
 	void *ptr3 = my_malloc(400);
 	cr_expect(ptr3 != NULL, "Failed to alloc ptr3");
-	cr_expect((size_t) ptr3 == (size_t) ptr + 12 + 200 + 4000 + 3, "Not aligned: %lx -%lx\n", (size_t)ptr3, (size_t)ptr + 12 + 200 + 4000);
+	cr_expect((size_t) ptr3 == (size_t) ptr + 12 + 200 + 4000 + 3 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr3, (size_t)ptr + 12 + 200 + 4000);
 	void *ptr4 = my_malloc(9000);
 	cr_expect(ptr4 != NULL, "Failed to alloc ptr4");
-	cr_expect((size_t) ptr4 == (size_t) ptr + 12 + 200 + 4000 + 400 + 4, "Not aligned: %lx -%lx\n", (size_t)ptr4, (size_t)ptr + 12 + 200 + 4000 + 400);
+	cr_expect((size_t) ptr4 == (size_t) ptr + 12 + 200 + 4000 + 400 + 4 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr4, (size_t)ptr + 12 + 200 + 4000 + 400);
 	my_free(ptr);
 	my_free(ptr1);
 	my_free(ptr2);
 	my_free(ptr3);
 	my_free(ptr4);
-}
+}*/
 
+Test(my_malloc_meta_a_lot, new_meta_page) {
+	int i = 0;
+	void *ptr;
+	while (i < 1000) {
+		ptr = my_malloc(10);
+		printf("%i\n", i);
+		i++;
+	}
+	cr_expect("not crashed");
+}
+/*
 Test(my_free, free_a_chunk) {
 	void *ptr = my_malloc(12);
 	my_free(ptr);

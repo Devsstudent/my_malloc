@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <dlfcn.h> 
 #include "my_secmalloc.private.h"
 
 void			*heap_data = NULL;
@@ -52,11 +54,12 @@ void	addLog(char *format, ...) {
 }
 
 bool	setup_heap() {
+	printf("%i\n", PAGE_SIZE);
 	heap_data = mmap((void *)(0x56128d551000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_data) {
 		return (false);
 	}
-	heap_meta = mmap((void *)(0x56128d55f000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	heap_meta = mmap((void *)(4096 * 100000), PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (!heap_meta) {
 		return (false);
 	}
@@ -73,6 +76,21 @@ size_t	get_meta_page_left() {
 	return (total_space - used);
 }
 
+bool	new_meta_page() {
+	void *heap_meta_remaped = mremap(heap_meta, PAGE_SIZE * info.nb_meta_pages, PAGE_SIZE * info.nb_meta_pages + PAGE_SIZE, MREMAP_MAYMOVE);
+	if (!heap_meta_remaped) {
+		printf("mmremap failed\n");
+		return (false);
+	}
+	if (heap_meta_remaped != heap_meta) {
+		printf("mmremap moved the base meta address\n");
+		return (false);
+	}
+	info.nb_meta_pages += 1;
+	printf("meta size total %ld\n",PAGE_SIZE * info.nb_meta_pages);
+	return (true);
+}
+
 //MetaInformationOnly
 t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	if (!data_addr) {
@@ -80,11 +98,14 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	}
 	//A voir si pas <=
 	if (get_meta_page_left() < size) {
-		//ask_new_meta_page
+		new_meta_page();
 	}
+	printf("nb chunk %i addr %p\n", info.nb_chunks, heap_meta + (sizeof(t_chunk) * info.nb_chunks));
+	printf("%ld\n", sizeof(t_chunk) * info.nb_chunks);
 	t_chunk *new = heap_meta + (sizeof(t_chunk) * (info.nb_chunks));
 	new->data_addr = data_addr;
 	new->state = state;
+	printf("size %ld\n", size);
 	new->size = size;
 	new->next = NULL;
 	new->prev = info.last_chunk;
@@ -123,7 +144,6 @@ bool	insert_into_chunk(t_chunk *chunk, size_t size) {
 	uint64_t	canary = canary_random();
 	chunk->canary = canary;
 	(*((uint64_t *)(chunk->data_addr + size - sizeof(uint64_t)))) = canary;
-	printf("YES\n");
 	chunk->next = new_chunk_free;
 	chunk->size = size;
 	new_chunk_free->prev = chunk;
@@ -135,19 +155,54 @@ bool	insert_into_chunk(t_chunk *chunk, size_t size) {
 	return (true);
 }
 
+bool	new_data_pages(size_t size) {
+	void *heap_data_remaped = mremap(heap_data, PAGE_SIZE * info.nb_data_pages, PAGE_SIZE * info.nb_data_pages + size, MREMAP_MAYMOVE);
+	if (!heap_data_remaped) {
+		printf("mmremap failed\n");
+		return (false);
+	}
+	if (heap_data_remaped != heap_data) {
+		printf("mmreamp moved the base addr\n");
+		return (false);
+	}
+	t_chunk *last_chunk = info.last_chunk;
+	if (last_chunk->state == FREE) {
+		last_chunk->size = last_chunk->size + (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) : (((size_t) (size / 4096) + 1) * PAGE_SIZE));
+	} else {
+		if (!new_chunk(heap_data, (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) : (((size_t) (size / 4096) + 1) * PAGE_SIZE)), FREE)) {
+			return (false);
+		}
+	}
+	size_t	tmp_nb = info.nb_data_pages;
+	info.nb_data_pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
+	printf("new data pages request : size %ld, page nb mmap %ld\n", size, info.nb_data_pages - tmp_nb);
+	return (true);
+}
+
 void    *my_malloc(size_t size) {
+
+	if (size == 0) {
+		return (NULL);
+	}
+
 	if (!heap_data) {
 		setup_heap();
 	}
+
+	//Get le previous chunk pour avoir la size du chunk
 	t_chunk *chunk_addr = NULL;
-//Get le previous chunk pour avoir la size du chunk
 	if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
+		if (!new_data_pages(size)) {
+			return (NULL);
+		}
+		chunk_addr = info.last_chunk;
 		//new_data_page
 		//setup_chunk_addr
 	}
 	if (!insert_into_chunk(chunk_addr, size + sizeof(uint64_t))) {
 		return 0;
 	}
+	printf("%p\n", chunk_addr->data_addr);
 	return chunk_addr->data_addr;
 }
 
@@ -186,3 +241,12 @@ void    *realloc(void *ptr, size_t size)
 }
 
 #endif
+
+int main() {
+	int i = 0;
+	while (i < 1000) {
+		printf("%i\n",i);
+		void *ptr = my_malloc(10);
+		i++;
+	}
+}
