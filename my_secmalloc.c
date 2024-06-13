@@ -133,7 +133,10 @@ bool	new_meta_page() {
 
 //Peut etre je vais pouvoir remove le state car j'ajoute que des block free
 //MetaInformationOnly
+//
+//
 t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
+//We could check if there is a chunk free, to setup the chunk instead of allocating a new one
 	if (!data_addr) {
 		return (NULL);
 	}
@@ -144,14 +147,14 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	}
 	//printf("nb chunk %i addr %p\n", info.nb_chunks, heap_meta + (sizeof(t_chunk) * info.nb_chunks));
 	//printf("%ld\n", sizeof(t_chunk) * info.nb_chunks);
-	t_chunk *new = heap_meta + (sizeof(t_chunk) * (info.nb_chunks));
-	new->data_addr = data_addr;
+	t_chunk *new = heap_meta + (sizeof(t_chunk) * (info.len_meta_list));
+	new->data_addr = data_addr + (size_t) (data_addr) % 8;
 	new->state = state;
 	//printf("size %ld\n", size);
 	new->size = size;
 	new->next = NULL;
 	new->prev = info.last_chunk;
-	info.nb_chunks += 1;
+	info.len_meta_list += 1;
 	info.total_meta_bytes += sizeof(t_chunk);
 	t_chunk *last = info.last_chunk;
 	if (last) {
@@ -164,13 +167,19 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 bool	chunk_with_enough_space(size_t size, t_chunk **chunk_addr) {
 	t_chunk *buff = info.first_chunk;
 
-	while (buff) {
+	while (buff != info.last_chunk) {
+		//ft_putchar('\n', 2);
+		//ft_putnbr_fd(size, 2);
 		if (buff->size >= size && buff->state == FREE) {
 			*chunk_addr = buff;
 			return (true);
 		}
 		buff = buff->next;
 	}
+		if (buff->size >= size && buff->state == FREE) {
+			*chunk_addr = buff;
+			return (true);
+		}
 	return (false);
 }
 
@@ -184,7 +193,7 @@ bool	insert_into_chunk(t_chunk *chunk, size_t size) {
 		return (false);
 	}
 	chunk->state = BUSY;
-	uint64_t	canary = canary_random();
+	uint64_t canary = canary_random();
 	chunk->canary = canary;
 	(*((uint64_t *)(chunk->data_addr + size - sizeof(uint64_t)))) = canary;
 	chunk->next = new_chunk_free;
@@ -221,7 +230,7 @@ bool	new_data_pages(size_t size) {
 	}
 	size_t	tmp_nb = info.nb_data_pages;
 	info.nb_data_pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
-	ft_putstr_fd("new data pages request\n", size);
+//	ft_putstr_fd("new data pages request\n", size);
 	return (true);
 }
 
@@ -237,6 +246,10 @@ void    *my_malloc(size_t size) {
 
 	//Get le previous chunk pour avoir la size du chunk
 	t_chunk *chunk_addr = NULL;
+	write(2, "ici:", 4);
+	ft_putnbr_fd(info.len_meta_list ,2);
+	ft_putchar('\n', 2);
+	//ft_putnbr_fd(info.total_meta_bytes, 2);
 	if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
 		if (!new_data_pages(size)) {
 			return (NULL);
@@ -246,13 +259,13 @@ void    *my_malloc(size_t size) {
 	if (!insert_into_chunk(chunk_addr, size + sizeof(uint64_t))) {
 		return 0;
 	}
-	ft_putnbr_fd(info.total_data_bytes, 2);
+	//ft_putnbr_fd(info.total_data_bytes, 2);
 	write(2, "\n", 1);
 	return chunk_addr->data_addr;
 }
 
 void *get_chunk(void *addr) {
-	for (size_t i = 0; i < info.nb_chunks; i++) {
+	for (size_t i = 0; i < info.len_meta_list; i++) {
 		t_chunk *chunk = info.first_chunk + i;
 		if (chunk->data_addr == addr) {
 			return (chunk);
@@ -261,12 +274,12 @@ void *get_chunk(void *addr) {
 	return (NULL);
 }
 
+
+//Tester si a 2 endroit, pas ala fin de la memeoire le merge_hcunk pour checker que la lendes block reste bien reduit bien de 1
 void merge_chunk(t_chunk *chunk){
-	if (!chunk->next)
-		return ;
 	t_chunk *next = chunk->next;
 	t_chunk *prev = chunk->prev;
-	if (next->state == FREE) {
+	if (next && next->state == FREE) {
 		chunk->size += chunk->next->size;
 		if (chunk->next->next)
 		{
@@ -278,8 +291,13 @@ void merge_chunk(t_chunk *chunk){
 			info.last_chunk = chunk;
 			chunk->next = NULL;
 		}
+		ft_putnbr_fd(info.len_meta_list, 2);
+		info.len_meta_list -= 1;
+		write(2, "ahahN", 5);
+		ft_putnbr_fd(info.len_meta_list, 2);
 		memset(next, 0, sizeof(t_chunk));
 	}
+	ft_putnbr_fd(next->state, 2);
 	if (prev && prev->state == FREE) {
 		prev->size += chunk->size;
 		if (chunk->next) {
@@ -289,10 +307,12 @@ void merge_chunk(t_chunk *chunk){
 			prev->next = NULL;
 			info.last_chunk = prev;
 		}
+		info.len_meta_list -= 1;
+		write(2, "ahahP", 4);
 		memset(chunk, 0, sizeof(t_chunk));
 	}
+	ft_putnbr_fd(info.len_meta_list, 2);
 }
-
 size_t	free_data_in_bytes() {
 	t_chunk	*buff = info.first_chunk;
 	size_t	bytes = 0;
@@ -305,7 +325,6 @@ size_t	free_data_in_bytes() {
 	}
 	return (bytes);
 }
-
 
 void    my_free(void *ptr) {
 	if (!ptr) {
@@ -327,9 +346,10 @@ void    my_free(void *ptr) {
 		return ;
 	}
 	info.total_data_bytes -= chunk->size;
-	ft_putnbr_fd(chunk->size, 2);
-	ft_putchar('\n', 2);
+	//ft_putnbr_fd(chunk->size, 2);
+	//ft_putchar('\n', 2);
 	chunk->state = FREE;
+	write(2, "free ", 5);
 	merge_chunk(chunk);
 //	memset(chunk->data_addr, 0, chunk->size);
 //	size_t	free_space = free_data_in_bytes();
@@ -355,6 +375,7 @@ void    *my_realloc(void *ptr, size_t size) {
 	}
 	if (!ptr && size > 0) {
 		res = my_malloc(size);
+		ft_putnbr_fd(size, 2);
 		if (res)
 			return (res);
 	}

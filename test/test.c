@@ -156,7 +156,9 @@ Test(my_realloc, realloc_bigger_block) {
 	cr_expect(reallocated_ptr != NULL, "Failed to realloc");
 	cr_expect(((char *)reallocated_ptr)[0] == 'a', "Realloc doesn't well copy content to the new addresse");
 	my_free(reallocated_ptr);
-	
+	reallocated_ptr = my_realloc(NULL, 19200);
+	cr_expect(reallocated_ptr != NULL, "Failed to realloc");
+	my_free(reallocated_ptr);
 }
 
 Test(my_malloc, a_lot) {

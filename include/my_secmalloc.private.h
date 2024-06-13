@@ -39,11 +39,12 @@ typedef struct chunk {
 typedef struct info_malloc {
 	size_t	nb_data_pages;
 	size_t	nb_meta_pages;
-	size_t	nb_chunks;
+	size_t	len_meta_list;
 	t_chunk	*first_chunk;
 	t_chunk	*last_chunk;
 	size_t	total_data_bytes;
 	size_t	total_meta_bytes;
+	size_t	unused;
 }	t_info_malloc;
 
 typedef struct data {
