@@ -311,7 +311,7 @@ void    my_free(void *ptr) {
 	if (!ptr) {
 		return ;
 	}
-	write(2, "free\n", 5);
+	write(2, "free ", 5);
 	t_chunk *chunk = get_chunk(ptr);
 	if (!chunk) {
 		//error message
@@ -327,6 +327,8 @@ void    my_free(void *ptr) {
 		return ;
 	}
 	info.total_data_bytes -= chunk->size;
+	ft_putnbr_fd(chunk->size, 2);
+	ft_putchar('\n', 2);
 	chunk->state = FREE;
 	merge_chunk(chunk);
 //	memset(chunk->data_addr, 0, chunk->size);
@@ -334,12 +336,36 @@ void    my_free(void *ptr) {
 }
 
 void    *my_calloc(size_t nmemb, size_t size) {
-
+	write(2, "calloc\n", 7);
+	void *res = my_malloc(nmemb * size);
+	if (!res) {
+		return NULL;
+	}
+	memset(res, 0, nmemb * size);
+	return (res);
 }
 
 
 void    *my_realloc(void *ptr, size_t size) {
-
+	write(2, "realloc\n", 8);
+	void *res = NULL;
+	if (size == 0 && ptr) {
+		my_free(ptr);
+		return (res);
+	}
+	if (!ptr && size > 0) {
+		res = my_malloc(size);
+		if (res)
+			return (res);
+	}
+	t_chunk *info_ptr = get_chunk(ptr);
+	if (info_ptr) {
+		res = my_malloc(size);
+		memcpy(res, ptr, info_ptr->size - sizeof(uint64_t));
+		my_free(ptr);
+		return (res);
+	}
+	return NULL;
 }
 
 
@@ -352,6 +378,7 @@ void    free(void *ptr)
 {
     my_free(ptr);
 }
+
 void    *calloc(size_t nmemb, size_t size)
 {
     return my_calloc(nmemb, size);

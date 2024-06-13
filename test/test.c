@@ -39,7 +39,7 @@ Test(my_malloc, null) {
 
 Test(my_malloc, last_chunk_not_free) {
 }
-/*
+
 Test(my_malloc_more_pages, more_pages) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
@@ -62,15 +62,16 @@ Test(my_malloc_more_pages, more_pages) {
 }
 
 Test(my_malloc_meta_a_lot, new_meta_page) {
-	int i = 0;
+	int i = 1;
 	void *ptr;
 	while (i < 1000) {
 		ptr = my_malloc(10);
+		cr_expect((size_t) ptr + 10 * i + sizeof(uint64_t) * i, "Not aligned: %lx \n", (size_t)ptr);
 		printf("%i\n", i);
 		i++;
 	}
 	cr_expect("not crashed");
-} */
+} 
 
 Test(my_free, free_a_chunk) {
 	void *ptr = my_malloc(12);
@@ -105,10 +106,10 @@ Test(canary, overflow) {
 	}
 	my_free(s);
 }
-/*
+
 Test(my_malloc, free_pages) {
-    int rows = 10;
-    int cols = 5;
+    int rows = 1000;
+    int cols = 50;
 
     // Dynamically allocate memory for a 2D array of characters
     char **matrix = (char **)my_malloc(rows * sizeof(char *));
@@ -139,7 +140,7 @@ Test(my_calloc, well_setted_zero) {
 	int i = 0;
 	int *arr = ptr;
 	while (i < 10) {
-		printf("%i\n", arr[i]);
+		//printf("%i\n", arr[i]);
 		cr_expect(arr[i] == 0, "Error, my_calloc doesn't initilize to 0");
 		i++;
 	}
@@ -157,7 +158,6 @@ Test(my_realloc, realloc_bigger_block) {
 	my_free(reallocated_ptr);
 	
 }
-*/
 
 Test(my_malloc, a_lot) {
 	void *ptr = my_malloc(1200);
@@ -179,6 +179,14 @@ Test(my_malloc, a_lot) {
 	pt2 = my_malloc(12000);
 	cr_expect(pt2 != NULL, "Failed to alloc ptr");
 	cr_expect((size_t) 3 + 3 + 3 + 3 + 1200 + 4097 + 12000 + 7 * sizeof(uint64_t));
+	pt2 = my_malloc(12000);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(12000);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(12000);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	pt2 = my_malloc(12000);
+	cr_expect(pt2 != NULL, "Failed to alloc ptr");
 	my_free(ptr);
 }
 
