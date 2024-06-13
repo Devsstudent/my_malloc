@@ -59,7 +59,7 @@ Test(my_malloc_more_pages, more_pages) {
 	my_free(ptr2);
 	my_free(ptr3);
 	my_free(ptr4);
-}*/
+}
 
 Test(my_malloc_meta_a_lot, new_meta_page) {
 	int i = 0;
@@ -70,8 +70,8 @@ Test(my_malloc_meta_a_lot, new_meta_page) {
 		i++;
 	}
 	cr_expect("not crashed");
-}
-/*
+} */
+
 Test(my_free, free_a_chunk) {
 	void *ptr = my_malloc(12);
 	my_free(ptr);
@@ -95,7 +95,6 @@ Test(my_free, free_a_chunk) {
 	my_free(ptr7);
 	my_free(ptr6);
 }
-
 Test(canary, overflow) {
 	void *ptr = my_malloc(12);
 	char *s = (char *)ptr;
@@ -106,7 +105,7 @@ Test(canary, overflow) {
 	}
 	my_free(s);
 }
-
+/*
 Test(my_malloc, free_pages) {
     int rows = 10;
     int cols = 5;
@@ -159,7 +158,7 @@ Test(my_realloc, realloc_bigger_block) {
 	
 }
 */
-/*
+
 Test(my_malloc, a_lot) {
 	void *ptr = my_malloc(1200);
 	cr_expect(ptr != NULL, "Failed to alloc ptr");
@@ -179,8 +178,9 @@ Test(my_malloc, a_lot) {
 	cr_expect(pt2 != NULL, "Failed to alloc ptr");
 	pt2 = my_malloc(12000);
 	cr_expect(pt2 != NULL, "Failed to alloc ptr");
+	cr_expect((size_t) 3 + 3 + 3 + 3 + 1200 + 4097 + 12000 + 7 * sizeof(uint64_t));
 	my_free(ptr);
-}*/
+}
 
 /*
 Test(my_realloc, relloc_lower_well_free_unsed_part) {
