@@ -32,6 +32,7 @@ typedef struct chunk {
 	size_t			size;
 	struct chunk	*next;
 	struct chunk	*prev;
+	size_t			aligned;
 	uint64_t	canary;
 }	t_chunk;
 

@@ -1,4 +1,7 @@
-#!/bin/bash
+#dj:wq
+:wq
+:wq
+/bin/bash
 
 rm logs
 make clean dynamic

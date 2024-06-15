@@ -130,6 +130,82 @@ bool	new_meta_page() {
 	return (true);
 }
 
+/*
+bool	insert_into_chunk(t_chunk *chunk, size_t size) {
+
+	t_chunk *next_chunk = chunk->next;
+	size_t	free_bytes = chunk->size - size;
+	//printf("freee %ld\n", free_bytes);
+	size_t	aligned_forced_bytes = (size_t) (chunk->data_addr + size) % 8;
+	//if (free_bytes - aligned_forced_bytes <= 0) {
+		
+//	}
+	t_chunk *new_chunk_free = new_chunk(chunk->data_addr + size + aligned_forced_bytes, free_bytes - aligned_forced_bytes, FREE);
+//	printf("%ld chunksize %ld size %ld\n", free_bytes, chunk->size, size);
+	if (!new_chunk_free) {
+		return (false);
+	}
+	chunk->state = BUSY;
+	uint64_t canary = canary_random();
+	chunk->canary = canary;
+	//printf("%ld %ld\n", (size_t) size, info.total_data_bytes);
+	(*((uint64_t *)(chunk->data_addr + size - sizeof(uint64_t)))) = canary;
+	chunk->next = new_chunk_free;
+	chunk->size = size;
+	info.total_data_bytes += size + aligned_forced_bytes;
+	new_chunk_free->prev = chunk;
+	if (next_chunk) {
+		new_chunk_free->next = next_chunk;
+		next_chunk->prev = new_chunk_free;
+	}
+	
+	return (true);
+}*/
+
+bool	new_data_pages(size_t size) {
+	void *heap_data_remaped = mremap(heap_data, PAGE_SIZE * info.nb_data_pages, PAGE_SIZE * info.nb_data_pages + size, MREMAP_MAYMOVE);
+	if (!heap_data_remaped) {
+		//printf("mmremap failed\n");
+		exit(1);
+		return (false);
+	}
+	if (heap_data_remaped != heap_data) {
+		//printf("mmreamp moved the base addr\n");
+		exit(1);
+		return (false);
+	}
+	t_chunk *last_chunk = info.last_chunk;
+	if (last_chunk->state == FREE) {
+		last_chunk->size = last_chunk->size + (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) : (((size_t) (size / 4096) + 1) * PAGE_SIZE));
+	} else {
+		if (!new_chunk(heap_data, (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) : (((size_t) (size / 4096) + 1) * PAGE_SIZE)), FREE)) {
+			return (false);
+		}
+	}
+	info.nb_data_pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
+	ft_putstr_fd("new data pages request\n", size);
+	return (true);
+}
+/*
+bool	chunk_with_enough_space(size_t size, t_chunk **chunk_addr) {
+	t_chunk *buff = info.first_chunk;
+
+	while (buff && buff != info.last_chunk) {
+		//ft_putchar('\n', 2);
+		//ft_putnbr_fd(size, 2);
+		if (buff->size >= size && buff->state == FREE && buff->size) {
+			*chunk_addr = buff;
+			return (true);
+		}
+		buff = buff->next;
+	}
+	size_t	aligned_needed = (size_t) (buff->data_addr + size) % 8;
+	if (buff->size >= size + aligned_needed && buff->state == FREE) {
+		*chunk_addr = buff;
+		return (true);
+	}
+	return (false);
+}*/
 
 //Peut etre je vais pouvoir remove le state car j'ajoute que des block free
 //MetaInformationOnly
@@ -164,83 +240,6 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 	return (new);
 }
 
-bool	insert_into_chunk(t_chunk *chunk, size_t size) {
-
-	t_chunk *next_chunk = chunk->next;
-	size_t	free_bytes = chunk->size - size;
-	//printf("freee %ld\n", free_bytes);
-	size_t	aligned_forced_bytes = (size_t) (chunk->data_addr + size) % 8;
-	//if (free_bytes - aligned_forced_bytes <= 0) {
-		
-//	}
-	t_chunk *new_chunk_free = new_chunk(chunk->data_addr + size + aligned_forced_bytes, free_bytes - aligned_forced_bytes, FREE);
-//	printf("%ld chunksize %ld size %ld\n", free_bytes, chunk->size, size);
-	if (!new_chunk_free) {
-		return (false);
-	}
-	chunk->state = BUSY;
-	uint64_t canary = canary_random();
-	chunk->canary = canary;
-	//printf("%ld %ld\n", (size_t) size, info.total_data_bytes);
-	(*((uint64_t *)(chunk->data_addr + size - sizeof(uint64_t)))) = canary;
-	chunk->next = new_chunk_free;
-	chunk->size = size;
-	info.total_data_bytes += size + aligned_forced_bytes;
-	new_chunk_free->prev = chunk;
-	if (next_chunk) {
-		new_chunk_free->next = next_chunk;
-		next_chunk->prev = new_chunk_free;
-	}
-	
-	return (true);
-}
-
-bool	new_data_pages(size_t size) {
-	void *heap_data_remaped = mremap(heap_data, PAGE_SIZE * info.nb_data_pages, PAGE_SIZE * info.nb_data_pages + size, MREMAP_MAYMOVE);
-	if (!heap_data_remaped) {
-		//printf("mmremap failed\n");
-		exit(1);
-		return (false);
-	}
-	if (heap_data_remaped != heap_data) {
-		//printf("mmreamp moved the base addr\n");
-		exit(1);
-		return (false);
-	}
-	t_chunk *last_chunk = info.last_chunk;
-	if (last_chunk->state == FREE) {
-		last_chunk->size = last_chunk->size + (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) : (((size_t) (size / 4096) + 1) * PAGE_SIZE));
-	} else {
-		if (!new_chunk(heap_data, (size % 4096 == 0 ? (size / 4096 * PAGE_SIZE) : (((size_t) (size / 4096) + 1) * PAGE_SIZE)), FREE)) {
-			return (false);
-		}
-	}
-	size_t	tmp_nb = info.nb_data_pages;
-	info.nb_data_pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
-//	ft_putstr_fd("new data pages request\n", size);
-	return (true);
-}
-
-bool	chunk_with_enough_space(size_t size, t_chunk **chunk_addr) {
-	t_chunk *buff = info.first_chunk;
-
-	while (buff && buff != info.last_chunk) {
-		//ft_putchar('\n', 2);
-		//ft_putnbr_fd(size, 2);
-		if (buff->size >= size && buff->state == FREE && buff->size) {
-			*chunk_addr = buff;
-			return (true);
-		}
-		buff = buff->next;
-	}
-	size_t	aligned_needed = (size_t) (buff->data_addr + size) % 8;
-	if (buff->size >= size + aligned_needed && buff->state == FREE) {
-		*chunk_addr = buff;
-		return (true);
-	}
-	return (false);
-}
-
 void    *my_malloc(size_t size) {
 
 	if (size == 0) {
@@ -250,6 +249,9 @@ void    *my_malloc(size_t size) {
 	if (!heap_data) {
 		setup_heap();
 	}
+	ft_putstr_fd("malloc : ", 2);
+	ft_putnbr_fd(size, 2);
+	ft_putstr_fd("\n", 2);
 
 	//Get le previous chunk pour avoir la size du chunk
 	t_chunk *chunk_addr = NULL;
@@ -259,17 +261,40 @@ void    *my_malloc(size_t size) {
 //	ft_putchar('\n', 2);
 	//printf("%ld %ld\n", size, info.total_meta_bytes);
 	//ft_putnbr_fd(info.total_meta_bytes, 2);
-	if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
-		if (!new_data_pages(size + sizeof(uint64_t))) {
-			return (NULL);
+	//if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
+	if (info.last_chunk->state != FREE) {
+		write(2, "BUG\n", 4);
+		exit(1);
+	}
+	size_t	aligned = (size_t) (info.last_chunk->data_addr + size + sizeof(uint64_t)) % 8;
+	size_t	aligned_needed = aligned + size + sizeof(uint64_t);
+		if (info.last_chunk->size < aligned_needed) {
+			if (!new_data_pages(aligned_needed)) {
+				return (NULL);
+			}
 		}
+//		info.last_chunk->aligned = aligned;
+		info.last_chunk->state = BUSY;
+		info.last_chunk->size = aligned_needed;
+		ft_putstr_fd("chunk size allocated: ", 2);
+		ft_putnbr_fd(info.last_chunk->size, 2);
+		ft_putchar(' ', 2);
+		ft_putnbr_fd(aligned_needed, 2);
+		ft_putchar('\n', 2);
 		chunk_addr = info.last_chunk;
-	}
-	if (!insert_into_chunk(chunk_addr, size + sizeof(uint64_t))) {
-		return 0;
-	}
+		//printf("base %p\n", chunk_addr->data_addr);
+		size_t	size_new_chunk = info.last_chunk->size - aligned_needed;
+		void *new_data_addr = info.last_chunk->data_addr + aligned_needed;
+		info.last_chunk->canary =  canary_random();
+		*(uint64_t*)(info.last_chunk->data_addr + aligned_needed - sizeof(uint64_t)) = info.last_chunk->canary;
+		//printf("alloc ddr : %p, %ld canary addr%p\n", info.last_chunk->data_addr, aligned_needed, info.last_chunk->data_addr + aligned_needed - sizeof(uint64_t));
+		t_chunk *new_last_chunk = new_chunk(new_data_addr, size_new_chunk, FREE);
+		
+		//split
+	//if (!insert_into_chunk(chunk_addr, size + sizeof(uint64_t))) {
+	//	return 0;
+	//}
 	//ft_putnbr_fd(info.total_data_bytes, 2);
-	write(2, "\n", 1);
 	return chunk_addr->data_addr;
 }
 
@@ -284,10 +309,13 @@ void *get_chunk(void *addr) {
 }
 
 
+//On a bien un bug ici sur le merging et le next, desfois on perd le NULL
+
 //Tester si a 2 endroit, pas ala fin de la memeoire le merge_hcunk pour checker que la lendes block reste bien reduit bien de 1
 void merge_chunk(t_chunk *chunk){
 	t_chunk *next = chunk->next;
 	t_chunk *prev = chunk->prev;
+	ft_putnbr_fd(info.len_meta_list, 2);
 	if (next && next->state == FREE) {
 		chunk->size += chunk->next->size;
 		if (chunk->next->next)
@@ -320,16 +348,22 @@ void merge_chunk(t_chunk *chunk){
 	//	write(2, "ahahP", 4);
 		memset(chunk, 0, sizeof(t_chunk));
 	}
+	ft_putstr_fd("and", 2);
+	ft_putnbr_fd(info.len_meta_list, 2);
 	//ft_putnbr_fd(info.len_meta_list, 2);
 }
+
 size_t	free_data_in_bytes() {
 	t_chunk	*buff = info.first_chunk;
 	size_t	bytes = 0;
 
 	ft_putnbr_fd(info.len_meta_list, 2);
 	int i = 0;
-	while (info.last_chunk && buff && buff != info.last_chunk && i < info.len_meta_list) {
+	while (info.last_chunk && buff && buff != info.last_chunk) {
 		if (buff->state == FREE) {
+//			ft_putstr_fd("chunk :", 2);
+//			ft_putnbr_fd(buff->size, 2);
+//			ft_putstr_fd("\n", 2);
 			bytes += (size_t) buff->size;
 		}
 		buff = buff->next;
@@ -348,7 +382,6 @@ void    my_free(void *ptr) {
 	if (!ptr) {
 		return ;
 	}
-	write(2, "free", 4);
 	t_chunk *chunk = get_chunk(ptr);
 	if (!chunk) {
 		//error message
@@ -360,20 +393,29 @@ void    my_free(void *ptr) {
 	}
 	if (*(uint64_t *)(chunk->data_addr + chunk->size - sizeof(uint64_t)) != chunk->canary) {
 		ft_putstr_fd("EROORORRRORORO de CANNANANARY\n", 2);
+		//printf("%ld %p\n", chunk->size, chunk->data_addr);
+		ft_putnbr_fd(chunk->size, 2);
+		ft_putchar('\n', 2);
+		//printf("ERROR CANARY %p\n", (chunk->data_addr + chunk->size - sizeof(uint64_t)));
 		//addLog("Trying to free :%p\nError: Canary failed\n", ptr);
 		return ;
 	}
+	ft_putstr_fd("free : ", 2);
+	ft_putnbr_fd(chunk->size, 2);
+	ft_putchar('\n', 2);
 	info.total_data_bytes -= chunk->size;
 	//ft_putnbr_fd(chunk->size, 2);
 	//ft_putchar('\n', 2);
 	chunk->state = FREE;
 //	write(2, "free", 4);
-	merge_chunk(chunk);
+	//merge_chunk(chunk);
 //	memset(chunk->data_addr, 0, chunk->size);
 	size_t	free_space = free_data_in_bytes();
-	ft_putstr_fd("free :", 2);
-	ft_putnbr_fd(free_space, 2);
-	ft_putstr_fd("\n", 2);
+	if (free_space < 0) {
+		ft_putstr_fd("free :", 2);
+		ft_putnbr_fd(free_space, 2);
+		ft_putstr_fd("\n", 2);
+	}
 }
 
 void    *my_calloc(size_t nmemb, size_t size) {
@@ -410,16 +452,18 @@ void    *my_realloc(void *ptr, size_t size) {
 	}
 	return NULL;
 }
-/*
+
 int main(void) {
 	int i = 1;
 	void *ptr;
-	while (i < 1000) {
-		ptr = my_malloc(10);
-		printf("there %i\n", i);
-		i++;
-	}
-}*/
+	ptr = my_malloc(10);
+	void *ptr2 = my_malloc(500);
+	void *ptr3 = my_malloc(1000);
+	my_free(ptr3);
+	my_free(ptr);
+	my_free(ptr2);
+	i++;
+}
 
 
 #ifdef DYNAMIC
