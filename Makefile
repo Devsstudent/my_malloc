@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -I./include -L ./lib -g3
+CFLAGS = -I./include -L ./lib -Wall -Wextra -Werror
 PRJ = my_secmalloc
-OBJS = my_secmalloc.o
+OBJS = src/my_secmalloc.o
 SLIB = lib${PRJ}.a
 LIB = lib${PRJ}.so
 
@@ -18,7 +18,7 @@ dynamic: ${LIB}
 static: ${SLIB}
 
 clean:
-	${RM} .*.swp *~ *.o test/*.o
+	${RM} .*.swp *~ src/*.o test/*.o
 
 distclean: clean
 	${RM} ${SLIB} ${LIB}

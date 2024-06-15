@@ -32,7 +32,6 @@ typedef struct chunk {
 	size_t			size;
 	struct chunk	*next;
 	struct chunk	*prev;
-	size_t			aligned;
 	uint64_t	canary;
 }	t_chunk;
 
@@ -66,7 +65,7 @@ void    *my_malloc(size_t size);
 void    my_free(void *ptr);
 void    *my_calloc(size_t nmemb, size_t size);
 void    *my_realloc(void *ptr, size_t size);
-t_chunk	*new_chunk(void *data_addr, size_t size, t_chunk_state state);
+t_chunk	*new_chunk(void *data_addr, size_t size);
 void	addLog(char *format, ...);
 
 #endif
