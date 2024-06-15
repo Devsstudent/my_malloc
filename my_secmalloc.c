@@ -71,7 +71,7 @@ void	addLog(char *format, ...) {
 	if (!logFile) {
 		return ;
 	}
-	int fd = open(logFile, O_CREAT | O_APPEND | O_RDWR, 0640);
+	int fd = open(logFile, O_CREAT | O_RDWR, 0640);
 	if (fd < 0) {
 		perror (buffer);
 		write(2, buffer, strlen(buffer));
@@ -183,7 +183,6 @@ bool	new_data_pages(size_t size) {
 		}
 	}
 	info.nb_data_pages += (size % 4096 == 0 ? (size / 4096) : (((size_t) (size / 4096) + 1)));
-	ft_putstr_fd("new data pages request\n", size);
 	return (true);
 }
 /*
@@ -241,7 +240,7 @@ t_chunk *new_chunk(void *data_addr, size_t size, t_chunk_state state) {
 }
 
 void    *my_malloc(size_t size) {
-
+	addLog("\nAppel a Malloc for a size of %ld\n", size);
 	if (size == 0) {
 		return (NULL);
 	}
@@ -249,10 +248,6 @@ void    *my_malloc(size_t size) {
 	if (!heap_data) {
 		setup_heap();
 	}
-	ft_putstr_fd("malloc : ", 2);
-	ft_putnbr_fd(size, 2);
-	ft_putstr_fd("\n", 2);
-
 	//Get le previous chunk pour avoir la size du chunk
 	t_chunk *chunk_addr = NULL;
 	//printf("last : %ld %p\n", info.last_chunk->size, info.last_chunk);
@@ -263,7 +258,7 @@ void    *my_malloc(size_t size) {
 	//ft_putnbr_fd(info.total_meta_bytes, 2);
 	//if (!chunk_with_enough_space(size + sizeof(uint64_t), &chunk_addr)) {
 	if (info.last_chunk->state != FREE) {
-		write(2, "BUG\n", 4);
+	//	write(2, "BUG\n", 4);
 		exit(1);
 	}
 	size_t	aligned = (size_t) (info.last_chunk->data_addr + size + sizeof(uint64_t)) % 8;
@@ -276,11 +271,6 @@ void    *my_malloc(size_t size) {
 //		info.last_chunk->aligned = aligned;
 		info.last_chunk->state = BUSY;
 		info.last_chunk->size = aligned_needed;
-		ft_putstr_fd("chunk size allocated: ", 2);
-		ft_putnbr_fd(info.last_chunk->size, 2);
-		ft_putchar(' ', 2);
-		ft_putnbr_fd(aligned_needed, 2);
-		ft_putchar('\n', 2);
 		chunk_addr = info.last_chunk;
 		//printf("base %p\n", chunk_addr->data_addr);
 		size_t	size_new_chunk = info.last_chunk->size - aligned_needed;
@@ -295,6 +285,7 @@ void    *my_malloc(size_t size) {
 	//	return 0;
 	//}
 	//ft_putnbr_fd(info.total_data_bytes, 2);
+	addLog("Appel a Malloc, return address : %p\n", chunk_addr->data_addr);
 	return chunk_addr->data_addr;
 }
 
@@ -315,7 +306,7 @@ void *get_chunk(void *addr) {
 void merge_chunk(t_chunk *chunk){
 	t_chunk *next = chunk->next;
 	t_chunk *prev = chunk->prev;
-	ft_putnbr_fd(info.len_meta_list, 2);
+	//ft_putnbr_fd(info.len_meta_list, 2);
 	if (next && next->state == FREE) {
 		chunk->size += chunk->next->size;
 		if (chunk->next->next)
@@ -348,8 +339,6 @@ void merge_chunk(t_chunk *chunk){
 	//	write(2, "ahahP", 4);
 		memset(chunk, 0, sizeof(t_chunk));
 	}
-	ft_putstr_fd("and", 2);
-	ft_putnbr_fd(info.len_meta_list, 2);
 	//ft_putnbr_fd(info.len_meta_list, 2);
 }
 
@@ -357,13 +346,10 @@ size_t	free_data_in_bytes() {
 	t_chunk	*buff = info.first_chunk;
 	size_t	bytes = 0;
 
-	ft_putnbr_fd(info.len_meta_list, 2);
+	//ft_putnbr_fd(info.len_meta_list, 2);
 	int i = 0;
 	while (info.last_chunk && buff && buff != info.last_chunk) {
 		if (buff->state == FREE) {
-//			ft_putstr_fd("chunk :", 2);
-//			ft_putnbr_fd(buff->size, 2);
-//			ft_putstr_fd("\n", 2);
 			bytes += (size_t) buff->size;
 		}
 		buff = buff->next;
@@ -379,30 +365,25 @@ size_t	free_data_in_bytes() {
 }
 
 void    my_free(void *ptr) {
+	addLog("\nAppel a free on %p\n", ptr);
 	if (!ptr) {
 		return ;
 	}
 	t_chunk *chunk = get_chunk(ptr);
 	if (!chunk) {
-		//error message
+		addLog("free on a unknowed addres: %p\n", ptr);
 		return ;
 	}
 	if (chunk->state == FREE) {
-		//Error message
+		addLog("double free for %p\n", ptr);
 		return ;
 	}
 	if (*(uint64_t *)(chunk->data_addr + chunk->size - sizeof(uint64_t)) != chunk->canary) {
-		ft_putstr_fd("EROORORRRORORO de CANNANANARY\n", 2);
-		//printf("%ld %p\n", chunk->size, chunk->data_addr);
-		ft_putnbr_fd(chunk->size, 2);
-		ft_putchar('\n', 2);
-		//printf("ERROR CANARY %p\n", (chunk->data_addr + chunk->size - sizeof(uint64_t)));
-		//addLog("Trying to free :%p\nError: Canary failed\n", ptr);
+		addLog("Trying to free :%p\nError: Canary failed (Heap Overflow)\n", ptr);
 		return ;
 	}
-	ft_putstr_fd("free : ", 2);
-	ft_putnbr_fd(chunk->size, 2);
-	ft_putchar('\n', 2);
+	//ft_putnbr_fd(chunk->size, 2);
+	//ft_putchar('\n', 2);
 	info.total_data_bytes -= chunk->size;
 	//ft_putnbr_fd(chunk->size, 2);
 	//ft_putchar('\n', 2);
@@ -412,26 +393,26 @@ void    my_free(void *ptr) {
 //	memset(chunk->data_addr, 0, chunk->size);
 	size_t	free_space = free_data_in_bytes();
 	if (free_space < 0) {
-		ft_putstr_fd("free :", 2);
-		ft_putnbr_fd(free_space, 2);
-		ft_putstr_fd("\n", 2);
+		//ft_putstr_fd("free :", 2);
+		//ft_putnbr_fd(free_space, 2);
+		//ft_putstr_fd("\n", 2);
 	}
 }
 
 void    *my_calloc(size_t nmemb, size_t size) {
-	write(2, "calloc\n", 7);
+	addLog("\nAppel a Calloc, for a total size of %ld\n", nmemb * size);
 	void *res = my_malloc(nmemb * size);
-	ft_putnbr_fd(nmemb * size, 2);
 	if (!res) {
 		return NULL;
 	}
 	memset(res, 0, nmemb * size);
+	addLog("Appel a Calloc, return %p\n", res);
 	return (res);
 }
 
 
 void    *my_realloc(void *ptr, size_t size) {
-	write(2, "realloc\n", 8);
+	addLog("\nAppel a Realloc, for a total size of %ld\n", size);
 	void *res = NULL;
 	if (size == 0 && ptr) {
 		my_free(ptr);
@@ -439,8 +420,8 @@ void    *my_realloc(void *ptr, size_t size) {
 	}
 	if (!ptr && size > 0) {
 		res = my_malloc(size);
-		ft_putnbr_fd(size, 2);
 		if (res)
+			addLog("Appel a Realloc, return %p\n", res);
 			return (res);
 	}
 	t_chunk *info_ptr = get_chunk(ptr);
@@ -448,11 +429,13 @@ void    *my_realloc(void *ptr, size_t size) {
 		res = my_malloc(size);
 		memcpy(res, ptr, info_ptr->size - sizeof(uint64_t));
 		my_free(ptr);
+		addLog("Appel a Realloc, return %p\n", res);
 		return (res);
 	}
-	return NULL;
+	addLog("Appel a Realloc, return %p\n", res);
+	return res;
 }
-
+/*
 int main(void) {
 	int i = 1;
 	void *ptr;
@@ -463,7 +446,7 @@ int main(void) {
 	my_free(ptr);
 	my_free(ptr2);
 	i++;
-}
+}*/
 
 
 #ifdef DYNAMIC
