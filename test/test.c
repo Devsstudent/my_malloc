@@ -10,37 +10,35 @@ Test(mmap, simple) {
     cr_expect(res == 0);
 }
 */
-/*
 Test(my_malloc_simple, simple) {
-	void *ptr = my_malloc(12);
+	printf("test simple malloc\n");
+	void *ptr = my_malloc(16);
 	cr_expect(ptr != NULL, "Failed to alloc");
-	void *ptr2 = my_malloc(25);
-	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
-}*/
-/*
+	void *ptr2 = my_malloc(48);
+	cr_expect((size_t) ptr2 == (size_t) ptr + 16 + sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
+}
+
+
 Test(my_malloc_aligned, double_alloc_aligned_one_page) {
-	void *ptr = my_malloc(12);
+	printf("test multi malloc\n");
+	void *ptr = my_malloc(16);
 	cr_expect(ptr != NULL, "Failed to alloc");
 	void *ptr2 = my_malloc(24);
-	cr_expect((size_t) ptr2 == (size_t) ptr + 12 + 1 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
+	cr_expect((size_t) ptr2 == (size_t) ptr + 16 + 1 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr2, (size_t)ptr + 12);
 	void *ptr3 = my_malloc(2500);
-	cr_expect((size_t) ptr3 == (size_t) ptr + 12 + 25 + 2 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr3, (size_t)ptr + 12 + 25);
-	void *ptr4 = my_malloc(1);
-	cr_expect((size_t) ptr4 == (size_t) ptr + 12 + 25 + 2500 + 3 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr4, (size_t)ptr + 12 + 25 + 2500);
+	cr_expect((size_t) ptr3 == (size_t) ptr + 16 + 24 + 2 * sizeof(uint64_t), "Not aligned: %lx -%lx\n", (size_t)ptr3, (size_t)ptr + 12 + 25);
 	my_free(ptr);
 	my_free(ptr2);
 	my_free(ptr3);
-	my_free(ptr4);
 }
 
 Test(my_malloc, null) {
+	printf("test malloc null\n");
 	void *ptr = my_malloc(0);
 	cr_expect(ptr == NULL, "Failed to alloc");
 }
 
-Test(my_malloc, last_chunk_not_free) {
-}
-
+/*
 Test(my_malloc_more_pages, more_pages) {
 	void *ptr = my_malloc(12);
 	cr_expect(ptr != NULL, "Failed to alloc");
@@ -63,18 +61,19 @@ Test(my_malloc_more_pages, more_pages) {
 }*/
 
 Test(my_malloc_meta_a_lot, new_meta_page) {
+	printf("Test new_meta_page, lot of chunk\n");
 	int i = 1;
-	void *ptr;
 	while (i < 1000) {
-		ptr = my_malloc(9);
-//		cr_expect((size_t) ptr + 10 * i + sizeof(uint64_t) * i, "Not aligned: %lx \n", (size_t)ptr);
-		printf("there %i\n", i);
+		void *ptr = my_malloc(9);
+		cr_expect((size_t) ptr + 10 * i + sizeof(uint64_t) * i, "Not aligned: %lx \n", (size_t)ptr);
+		my_free(ptr);
 		i++;
 	}
 	cr_expect("not crashed");
 } 
 
 Test(my_free, free_a_chunk) {
+	printf("testing, to free, sould allocate at the previous place\n");
 	void *ptr = my_malloc(12);
 	my_free(ptr);
 	void *ptr2 = my_malloc(12);
@@ -92,12 +91,13 @@ Test(my_free, free_a_chunk) {
 	my_free(ptr4);
 	void *ptr7 = my_malloc(650);
 	cr_expect(ptr7 != NULL, "Failed to alloc ptr7");
-//	cr_expect((size_t) ptr7 == (size_t) ptr3, "ptr7 %ld !=  ptr3 %ld", (size_t) ptr7, (size_t) ptr3);
 	my_free(ptr5);
 	my_free(ptr7);
 	my_free(ptr6);
 }
+
 Test(canary, overflow) {
+	printf("test heapoveflow\n");
 	void *ptr = my_malloc(12);
 	char *s = (char *)ptr;
 	int i = 0;
@@ -109,6 +109,7 @@ Test(canary, overflow) {
 }
 
 Test(my_malloc, free_pages) {
+	printf("test full free double arr\n");
     int rows = 1000;
     int cols = 1000;
 
@@ -136,6 +137,7 @@ Test(my_malloc, free_pages) {
 }
 
 Test(my_calloc, well_setted_zero) {
+	printf("test my calloc\n");
 	void *ptr = my_calloc(sizeof(int), 10);
 	cr_expect(ptr != NULL, "Failed to alloc ptr6");
 	int i = 0;
@@ -149,6 +151,7 @@ Test(my_calloc, well_setted_zero) {
 }
 
 Test(my_realloc, realloc_bigger_block) {
+	printf("test realloc\n");
 	void *ptr = my_malloc(1);
 	cr_expect(ptr != NULL, "Failed to alloc ptr");
 	char a = 'a';
@@ -163,6 +166,7 @@ Test(my_realloc, realloc_bigger_block) {
 }
 
 Test(my_malloc, a_lot) {
+	printf("test a lot of big malloc\n");
 	void *ptr = my_malloc(1200);
 	cr_expect(ptr != NULL, "Failed to alloc ptr");
 	void *pt2 = my_malloc(1200);
@@ -205,6 +209,7 @@ Test(my_realloc, relloc_lower_well_free_unsed_part) {
 }
 
 Test(my_realloc, passing_null_ptr) {
+	printf("test realloc with null ptr\n");
 	void *ptr = NULL;
 
 	void *ptr2 = my_realloc(ptr, 120);
@@ -213,10 +218,30 @@ Test(my_realloc, passing_null_ptr) {
 }
 
 Test(my_realloc, passing_ptr_size_zero) {
+	printf("test realloc with size zero\n");
 	void *ptr2 = my_malloc(120);
 	cr_expect(ptr2 != NULL, "Failed to alloc ptr");
 	void *ptr = my_realloc(ptr2, 0);
 	cr_expect(ptr == NULL, "Error realloc not freeing with size 0");
 }
 
-//Ajouter un test pour la demande d'une nouvelle meta page
+
+Test(my_malloc, stress_test) {
+	printf("test stress malloc\n");
+    const int N = 1000; // Nombre de répétitions
+    void **ptrs = malloc(N * sizeof(void*)); // Tableau pour stocker les pointeurs alloués
+
+    for (int i = 0; i < N; i++) {
+        size_t size = (i % 10 + 1) * 10; // Taille d'allocation variable
+        ptrs[i] = my_malloc(size);
+        memset(ptrs[i], 0, size); // Initialise la mémoire allouée à zéro
+        cr_assert_not_null(ptrs[i], "Allocation failed at iteration %d", i);
+    }
+
+    for (int i = 0; i < N; i++) {
+        my_free(ptrs[i]); // Libération de la mémoire
+    }
+
+    free(ptrs); // Libérer le tableau des pointeurs
+}
+

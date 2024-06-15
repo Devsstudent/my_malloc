@@ -24,8 +24,8 @@ distclean: clean
 	${RM} ${SLIB} ${LIB}
 
 build_test: CFLAGS += -DTEST
-build_test: ${OBJS} test/test.o
-	$(CC) -o test/test $^ -lcriterion -Llib
+build_test: ${OBJS} test/test.o libmy_secmalloc.a
+	$(CC) -o test/test $^ -Llib -lcriterion -L ./ -lmy_secmalloc
 
 test: build_test
 	LD_LIBRARY_PATH=./lib test/test
