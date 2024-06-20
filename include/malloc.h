@@ -8,6 +8,11 @@
 # include "libft.h"
 # define PAGE_SIZE getpagesize()
 
+typedef enum type {
+	TINY,
+	SMALL,
+	LARGE
+}	t_type;
 
 typedef enum state {
 	FREE,
@@ -22,19 +27,14 @@ typedef struct chunk {
 	//Prev ?
 }	t_chunk;
 
-typedef struct li_chunks{
+typedef struct pages {
 	size_t		free_chunks;
 	size_t		busy_chunks;
 	size_t		total_bytes_busy;
 	size_t		total_bytes_free;
-	t_chunk		*next;
-}	t_li_chunks;
-
-typedef struct pages {
-	t_li_chunks		li_chunks;
-	size_t			page_nb;
-	void			*last_addr;
-	void			*first_addr;
+	t_chunk		*chunks;
+	size_t		page_nb;
+	t_type		type;
 }	t_pages;
 
 typedef struct alloc_info {
@@ -47,6 +47,7 @@ typedef struct alloc_info {
 }	t_alloc_info;
 
 
+extern t_alloc_info *get_info(void);
 void	*ft_malloc(size_t size);
 void *ft_realloc(void *ptr, size_t size);
 void ft_free(void *ptr);

@@ -24,34 +24,104 @@ t_alloc_info alloc_info;
 //pour le insert dans un chunks: should be fine
 
 
+//Utils.c
 //
+void	add_back(size_t size, void *addr, t_pages *page) {
+	t_chunk *buff = page->chunks;
+	page->free_chunks += 1;
+	total_bytes_free += size - sizeof(t_chunk);
+	if (!buff) {
+		page->chunks = (t_chunk *) addr;
+		page->chunks->size = size + sizeof(t_chunk);
+		page->chunks->state = FREE;
+		page->chunks->chunk_addr = addr;
+		return ;
+	}
+	while (buff->next) {
+		buff = buff->next;
+	}
+	buff->next = (t_chunk *) buff->chunk_addr + size;
+	t_chunk *new = buff->next;
+	new->size = size + sizeof(t_chunk);
+	new->state = FREE;
+	new->chunk_addr = addr;
+}
 
-bool	init_page(size_t size, t_page page) {
+bool	init_page(size_t size, t_page *page) {
 	void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
 		return (false);
 	}
+	page->page_nb += 1;
+	add_back(size, ptr, page->chunks);
 	return (true);
 }
 
-
-void *ft_malloc(size_t size) {
-	if (!alloc_info.tiny->first_addr) {
+bool setup_pages(t_pages *current) {
+	if (!current->chunks && current->type == TINY) {
 		if (!init_page(page_size * 10, alloc_info.tiny)) {
-			return (NULL);
+			return (false);
 		}
 	}
-	if (!alloc_info.small->first_addr) {
+	if (!current->chunks && current->type == SMALL) {
 		if (!init_page(page_size * 5, alloc_info.small)) {
-			return (NULL);
+			return (false);
 		}
+		alloc_info.tiny.page_nb += 1;
 	}
-	if (!alloc_info.large->first_addr) {
+	if (!current->chunks && current->type == LARGE) {
 		if (!init_page(page_size * 1, alloc_info.large)) {
-			return (NULL);
+			return (false);
 		}
 	}
-	return (malloc(size));
+	return (true);
+}
+
+t_chunk *looking_for_chunk(t_pages *page, size_t size) {
+	t_chunk *buff = page->chunks;
+	while (buff) {
+		//Because size contain sizeof(chunk)
+		if (buff->state == FREE && buff->size <= size) {
+			return (buff);
+		}
+		buff = buff->next;
+	}
+	return NULL;
+}
+
+
+t_pages	*get_current_page(size_t size) {
+	if (size >= 4096) {
+		alloc_info.large.type = LARGE;
+		return (&alloc_info.large);
+	} else if (size >= 560) {
+		alloc_info.small.type = SMALL;
+		return (&alloc_info.small);
+	}
+	alloc_info.tiny.type = TINY;
+	return (&alloc_info.tiny);
+}
+
+t_alloc_info *get_info(void){
+	return &alloc_info;
+}
+
+
+#include <stdio.h>
+void *ft_malloc(size_t size) {
+	t_pages *current_pages = get_current_page(size);
+	write(2, "AA", 2);
+	if (!setup_pages()) {
+		return (false);
+	}
+	//checker la taille du block, et verifier qu'on au moins 1 block free qui correspond
+	
+	if (!looking_for_chunk(current_pages, size)) {
+		//new page mmap sur la page
+		//ce qui implique le deplacement des donnee en memoire
+	}
+	//split le chunk si le next n'est pas null
+	return (current_pages(chunks->chunk_addr + sizeof(chunk)));
 }
 
 void ft_free(void *ptr) {
