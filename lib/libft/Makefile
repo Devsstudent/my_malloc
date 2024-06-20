@@ -19,10 +19,9 @@ bonus:
 
 $(NAME): $(OBJ)
 	ar rcs $(NAME) $(OBJ)
-	$(CC) -shared -o libft.so $(OBJ)
 
 %.o: %.c
-	$(CC) -fPIC $(FLAG) -c $< -o $@
+	$(CC) $(FLAG) -c $< -o $@
 
 clean: 
 	rm -f *.o
