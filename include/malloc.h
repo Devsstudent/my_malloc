@@ -32,7 +32,9 @@ typedef struct pages {
 	size_t		busy_chunks;
 	size_t		total_bytes_busy;
 	size_t		total_bytes_free;
+	size_t		total_bytes_alignement;
 	t_chunk		*chunks;
+	t_chunk		*last;
 	size_t		page_nb;
 	t_type		type;
 }	t_pages;
@@ -51,5 +53,6 @@ extern t_alloc_info *get_info(void);
 void	*ft_malloc(size_t size);
 void *ft_realloc(void *ptr, size_t size);
 void ft_free(void *ptr);
+extern t_chunk *looking_for_chunk(t_pages *page, size_t size);
 
 #endif
