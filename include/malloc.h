@@ -22,7 +22,6 @@ typedef enum state {
 typedef struct chunk {
 	size_t				size;
 	t_state				state;
-	void				*chunk_addr;
 	struct chunk		*next ;
 	//Prev ?
 }	t_chunk;
@@ -54,5 +53,6 @@ void	*ft_malloc(size_t size);
 void *ft_realloc(void *ptr, size_t size);
 void ft_free(void *ptr);
 extern t_chunk *looking_for_chunk(t_pages *page, size_t size);
+extern t_chunk *get_chunk(void *ptr, t_pages *ptr_page);
 
 #endif
