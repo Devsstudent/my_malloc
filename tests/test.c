@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/06/23 16:15:47 by odessein         ###   ########.fr       */
+/*   Updated: 2024/06/23 21:58:41 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,31 @@ void TwoAlloctionTiny() {
 }
 
 void MultipleAllocatoinTiny() {
+
+	int rows = 100;
+	int cols = 530;
+
+    // Dynamically allocate memory for a 2D array of characters
+    char **matrix = (char **)ft_malloc(rows * sizeof(char *));
+	TEST_ASSERT_TRUE(matrix != NULL);
+
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (char *)ft_malloc((cols + 1) * sizeof(char)); // +1 for null terminator
+		TEST_ASSERT_TRUE(matrix[i] != NULL);
+    }
+    // Fill the 2D array with sample data
+    char fillChar = 'A';
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = fillChar++;
+        }
+        matrix[i][cols] = '\0'; // Null-terminate each string
+    }
+    // Free dynamically allocated memory
+    for (int i = 0; i < rows; i++) {
+        ft_free(matrix[i]);
+    }
+    ft_free(matrix);
 	//Loop allocation //check que c'est bien set
 	//Loop free //check que c'est bien
 
@@ -112,12 +137,16 @@ int main() {
 
    printf("\n\n FREE TEST \n\n");
    RUN_TEST(FreeTest);
+
    printf("\n\n ONE ALLOCATOIN BY PAGE TEST \n\n");
    RUN_TEST(OneAllocationByPageTest);
+
    printf("\n\n MULTIPLE ALLOCATION TINY TEST \n\n");
    RUN_TEST(TwoAlloctionTiny);
 
    printf("\n\n MULTIPLE ALLOCATION LOOP TINY \n\n");
+   RUN_TEST(MultipleAllocatoinTiny);
+
    printf("\n\n MULTIPLE ALLOCATION LOOP SMALL \n\n");
    printf("\n\n MULTIPLE ALLOCATION LOOP LARGE \n\n");
    printf("\n\n MULTIPLE ALLOCATION LOOP MIX \n\n");

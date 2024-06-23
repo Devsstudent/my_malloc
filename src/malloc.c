@@ -28,6 +28,7 @@ t_alloc_info alloc_info;
 void	add_back(size_t size, void *addr, t_pages *page) {
 	printf("CALL ADDBACK\n");
 	t_chunk *buff = page->chunks;
+	printf("size asked for the free block %ld \n", size);
 	if (page->total_bytes_free < size || page->total_bytes_free - sizeof(t_chunk) <= 0) {
 		return ;
 	}
@@ -53,7 +54,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 	}
 	page->total_bytes_free += size - sizeof(t_chunk);
 	page->total_bytes_alignement += alignement_needed;
-	printf("A HF %ld %p\n", (size_t)(sizeof(t_chunk) + buff->size + alignement_needed), page->chunks);
+	printf("A HF %ld %p %ld\n", (size_t)(sizeof(t_chunk) + buff->size + alignement_needed), page->chunks, page->total_bytes_free);
 	buff->next = (t_chunk *) ((void *)buff +  sizeof(t_chunk) + buff->size + alignement_needed);
 	t_chunk *new = buff->next;
 	new->size = size;
@@ -64,6 +65,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 }
 
 bool	init_page(size_t size, t_pages *page) {
+	printf("INIT PAGE\n");
 	void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
 		return (false);
@@ -73,10 +75,11 @@ bool	init_page(size_t size, t_pages *page) {
 	add_back(size, ptr, page);
 	return (true);
 }
-#include <string.h>
+
 bool	ask_new_page(size_t size, t_pages *page) {
 	printf("SIZE NEW PAGE %ld\n", size);
 	void *ptr = mmap(page->chunks, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+	t_chunk *buff = NULL;
 	if (!ptr) {
 		return (false);
 	}
@@ -85,11 +88,8 @@ bool	ask_new_page(size_t size, t_pages *page) {
 		ft_memmove(ptr, page->chunks, page->page_nb * PAGE_SIZE);
 		printf("new addr %p %p bru %ld\n", ptr, page->chunks, page->page_nb * PAGE_SIZE);
 		page->chunks = (t_chunk *) ptr;
+		buff = page->chunks;
 		printf("%p\n",page->chunks);
-		t_chunk *buff = page->chunks;
-		while (buff) {
-			buff = buff->next;
-		}
 		if (munmap(previous_location, page->page_nb * PAGE_SIZE) < 0) {
 			return (false);
 		}
@@ -100,12 +100,13 @@ bool	ask_new_page(size_t size, t_pages *page) {
 	} else {
 		page->page_nb = size / 4096;
 	}
-	t_chunk *buff = page->chunks;
 	//printf("%p %ld %ld\n", buff, buff->state, buff->size);
 	while (buff && buff->next) {
+		printf("testing\n");
 		buff = buff->next;
 	}
 	page->last = buff;
+	page->total_bytes_free += size;
 	return (true);
 }
 
@@ -132,6 +133,7 @@ bool setup_pages(t_pages *current) {
 t_chunk *looking_for_chunk(t_pages *page, size_t size) {
 	t_chunk *buff = page->chunks;
 
+	printf("\n\n");
 	while (buff) {
 		//Because size contain sizeof(chunk)
 		printf("state %i size %ld\n", buff->state, buff->size);
@@ -173,10 +175,10 @@ void *ft_malloc(size_t size) {
 		//new page mmap sur la page
 		//ce qui implique le deplacement des donnee en memoire
 		ask_new_page(PAGE_SIZE * current_pages->page_nb + size + sizeof(t_chunk), current_pages);
+		//Always last block free, otherwise must addback
 		if (current_pages->last->state == FREE) {
 			printf("SIZE %ld %ld\n", current_pages->last->size, size);
 			current_pages->last->size += size;
-			current_pages->total_bytes_free += size;
 		}
 		available_chunk = current_pages->last;
 		printf("SIZsssE %ld\n", available_chunk->size);
@@ -187,12 +189,17 @@ void *ft_malloc(size_t size) {
 	current_pages->busy_chunks += 1;
 	current_pages->free_chunks -= 1;
 	current_pages->total_bytes_busy += size;
-	alloc_addr = (void *)available_chunk + sizeof(t_chunk);
+	current_pages->total_bytes_free -= size;
+	alloc_addr = (void *) available_chunk + sizeof(t_chunk);
+	printf("total bytes free : %i \n", current_pages->total_bytes_free);
 	if (!available_chunk->next) {
+		if (current_pages->total_bytes_free < size) {
+			return (NULL);
+		}
 		add_back(current_pages->total_bytes_free - size, (void *)available_chunk + available_chunk->size, current_pages);
 	}
 	//split le chunk si le next n'est pas null
-	//	return (current_pages->chunks->chunk_addr + sizeof(t_chunk));
+	//return (current_pages->chunks->chunk_addr + sizeof(t_chunk));
 	return (alloc_addr);
 }
 
@@ -235,6 +242,7 @@ void ft_free(void *ptr) {
 	}
 	//fonction de changement d'etat ? 
 	chunk_to_free->state = FREE;
+	ptr_page->total_bytes_free += chunk_to_free->size;
 	ptr_page->free_chunks += 1;
 	ptr_page->busy_chunks -= 1;
 }
