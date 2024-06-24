@@ -25,39 +25,46 @@ t_alloc_info alloc_info;
 
 //Utils.c
 //
+size_t	get_current_free_space(t_pages *page) {
+		printf("%ld %ld %ld\n", page->total_bytes_free, page->free_chunks, page->busy_chunks);
+	return (page->total_bytes_free - (page->free_chunks + page->busy_chunks) * sizeof(t_chunk));
+}
+
 void	add_back(size_t size, void *addr, t_pages *page) {
 	printf("CALL ADDBACK\n");
 	t_chunk *buff = page->chunks;
-	printf("size asked for the free block %ld \n", size);
-	if (page->total_bytes_free < size || page->total_bytes_free - sizeof(t_chunk) <= 0) {
-		return ;
-	}
+	printf("size asked for the free block %ld %p\n", size, buff);
 	if (!buff) {
 		page->chunks = (t_chunk *) addr;
 		page->chunks->size = size - sizeof(t_chunk);
 		page->chunks->state = FREE;
 		page->free_chunks += 1;
 		page->last = page->chunks;
-		printf("OUT ADDBACK\n");
+		page->total_bytes_free = size;
+		printf("OUT ADDBACK %ld %ld %ld \n", page->chunks->size, get_current_free_space(page), sizeof(t_chunk));
 		return ;
 	}
+	size_t	free_space = get_current_free_space(page);
+	/*
+	if (page->total_bytes_free < size || page->total_bytes_free - sizeof(t_chunk) <= 0) {
+		return ;
+	}*/
 	while (buff->next) {
 		buff = buff->next;
 	}
 	int	alignement_needed = (size_t)((void *)buff + buff->size) % 8;
-	if (size + alignement_needed > page->total_bytes_free) {
+	if (size + alignement_needed > free_space) {
 		alignement_needed = ft_abs(8 - alignement_needed);
 		if (size <= alignement_needed) {
 			return ;
 		}
 		size -= alignement_needed;
 	}
-	page->total_bytes_free += size - sizeof(t_chunk);
 	page->total_bytes_alignement += alignement_needed;
-	printf("A HF %ld %p %ld\n", (size_t)(sizeof(t_chunk) + buff->size + alignement_needed), page->chunks, page->total_bytes_free);
+	printf("A HF %ld %p %ld\n", (size_t)(sizeof(t_chunk) + buff->size + alignement_needed), page->chunks, free_space);
 	buff->next = (t_chunk *) ((void *)buff +  sizeof(t_chunk) + buff->size + alignement_needed);
 	t_chunk *new = buff->next;
-	new->size = size;
+	new->size = size - sizeof(t_chunk);
 	new->state = FREE;
 	page->free_chunks += 1;
 	page->last = new;
@@ -71,7 +78,6 @@ bool	init_page(size_t size, t_pages *page) {
 		return (false);
 	}
 	page->page_nb += 1;
-	page->total_bytes_free = size;
 	add_back(size, ptr, page);
 	return (true);
 }
@@ -111,6 +117,7 @@ bool	ask_new_page(size_t size, t_pages *page) {
 }
 
 bool setup_pages(t_pages *current) {
+	printf("addr init first chunk %p \n", current->chunks);
 	if (!current->chunks && current->type == TINY) {
 		if (!init_page(PAGE_SIZE * 10, current)) {
 			return (false);
@@ -136,7 +143,7 @@ t_chunk *looking_for_chunk(t_pages *page, size_t size) {
 	printf("\n\n");
 	while (buff) {
 		//Because size contain sizeof(chunk)
-		printf("state %i size %ld\n", buff->state, buff->size);
+		printf("state %i size %ld asked size %ld aligned %ld\n", buff->state, buff->size, size, page->total_bytes_alignement);
 		if (buff->state == FREE && buff->size >= size) {
 			return (buff);
 		}
@@ -177,11 +184,9 @@ void *ft_malloc(size_t size) {
 		ask_new_page(PAGE_SIZE * current_pages->page_nb + size + sizeof(t_chunk), current_pages);
 		//Always last block free, otherwise must addback
 		if (current_pages->last->state == FREE) {
-			printf("SIZE %ld %ld\n", current_pages->last->size, size);
 			current_pages->last->size += size;
 		}
 		available_chunk = current_pages->last;
-		printf("SIZsssE %ld\n", available_chunk->size);
 //	else  maybe create a block
 	}
 	available_chunk->state = BUSY;
@@ -191,7 +196,7 @@ void *ft_malloc(size_t size) {
 	current_pages->total_bytes_busy += size;
 	current_pages->total_bytes_free -= size;
 	alloc_addr = (void *) available_chunk + sizeof(t_chunk);
-	printf("total bytes free : %i \n", current_pages->total_bytes_free);
+	printf("total bytes free : %i \n", get_current_free_space(current_pages));
 	if (!available_chunk->next) {
 		if (current_pages->total_bytes_free < size) {
 			return (NULL);
@@ -243,6 +248,8 @@ void ft_free(void *ptr) {
 	//fonction de changement d'etat ? 
 	chunk_to_free->state = FREE;
 	ptr_page->total_bytes_free += chunk_to_free->size;
+	ptr_page->total_bytes_busy -= chunk_to_free->size;
+	printf("GROUUU %ld %ld\n", get_current_free_space(ptr_page), chunk_to_free->size);
 	ptr_page->free_chunks += 1;
 	ptr_page->busy_chunks -= 1;
 }
