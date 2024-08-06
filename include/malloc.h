@@ -21,6 +21,7 @@ typedef enum state {
 
 typedef struct chunk {
 	size_t				size;
+	size_t				alignement;
 	t_state				state;
 	struct chunk		*next ;
 	//Prev ?

@@ -29,7 +29,7 @@ $(OBJ): obj_rep
 test: $(NAME)
 	$(CC) $(HEADER) -Wall -Werror -Wextra  -I ./lib/unity/ -I ./ -g3 -c tests/test.c -o tests/test.o
 	$(CC) $(HEADER) -Wall -Werror -Wextra -g3 -c ./lib/unity/unity.c -o obj/unity.o
-	$(CC) tests/test.o obj/unity.o -o tests/test  -L ./ -lft_malloc_x86_64_Linux $(LIB)  
+	$(CC) tests/test.o obj/unity.o -o tests/test  -L ./ -lft_malloc_$(HOSTTYPE) $(LIB)  
 	LD_LIBRARY_PATH=./libs:./ ./tests/test
 
 obj_rep:
