@@ -42,8 +42,9 @@ void OneAllocationByPageTest() {
 	void *ptr2 = ft_malloc(4096);
 
 	TEST_ASSERT_TRUE(ptr2 != NULL);
-	c = (t_chunk *)(ptr2 - sizeof(t_chunk));
+	c = (t_chunk *)(ptr2- sizeof(t_chunk));
 
+	printf("%p %p \n", c, alloc_info->large.chunks);
 	TEST_ASSERT_TRUE(alloc_info->large.chunks == c);
 	TEST_ASSERT_TRUE(c->size == 4096);
 	TEST_ASSERT_TRUE(c->state == BUSY);

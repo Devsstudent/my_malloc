@@ -78,6 +78,7 @@ bool	init_page(size_t size, t_pages *page) {
 	if (!ptr) {
 		return (false);
 	}
+//wtf +1 PAge size * 10 wesh
 	page->page_nb += 1;
 	add_back(size, ptr, page);
 	return (true);
@@ -128,10 +129,10 @@ bool setup_pages(t_pages *current) {
 		if (!init_page(PAGE_SIZE * 5, current)) {
 			return (false);
 		}
-		alloc_info.tiny.page_nb += 1;
+//		alloc_info.tiny.page_nb += 1;
 	}
 	if (!current->chunks && current->type == LARGE) {
-		if (!init_page(PAGE_SIZE * 1, current)) {
+		if (!init_page(PAGE_SIZE * 3, current)) {
 			return (false);
 		}
 	}
