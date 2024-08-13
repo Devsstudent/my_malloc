@@ -26,6 +26,7 @@ void OneAllocationByPageTest() {
 	TEST_ASSERT_TRUE(alloc_info->tiny.chunks == c);
 	TEST_ASSERT_TRUE(c->size == 12);
 	TEST_ASSERT_TRUE(alloc_info->tiny.chunks->state == BUSY);
+	TEST_ASSERT_TRUE(alloc_info->tiny.page_nb == 10);
 
 	ft_free(ptr);
 
@@ -36,6 +37,7 @@ void OneAllocationByPageTest() {
 	TEST_ASSERT_TRUE(alloc_info->small.chunks == c);
 	TEST_ASSERT_TRUE(c->size == 560);
 	TEST_ASSERT_TRUE(c->state == BUSY);
+	TEST_ASSERT_TRUE(alloc_info->small.page_nb == 5);
 
 	ft_free(ptr1);
 
@@ -48,6 +50,7 @@ void OneAllocationByPageTest() {
 	TEST_ASSERT_TRUE(alloc_info->large.chunks == c);
 	TEST_ASSERT_TRUE(c->size == 4096);
 	TEST_ASSERT_TRUE(c->state == BUSY);
+	TEST_ASSERT_TRUE(alloc_info->large.page_nb == 3);
 
 	ft_free(ptr2);
 }
