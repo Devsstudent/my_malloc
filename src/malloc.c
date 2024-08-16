@@ -269,4 +269,25 @@ void *ft_realloc(void *ptr, size_t size) {
 	return (realloc(ptr, size));
 }
 
-//#Dynamic 
+#ifdef DYNAMIC
+void    *malloc(size_t size)
+{
+    return ft_malloc(size);
+}
+void    free(void *ptr)
+{
+    ft_free(ptr);
+}
+
+void    *calloc(size_t nmemb, size_t size)
+{
+    return ft_calloc(nmemb, size);
+}
+
+void    *realloc(void *ptr, size_t size)
+{
+    return ft_realloc(ptr, size);
+
+}
+
+#endif

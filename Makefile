@@ -10,6 +10,9 @@ FLAG = -Wall -Werror -Wextra -g -MMD
 OBJ = $(addsuffix .o, $(addprefix obj/, malloc))
 CC = gcc
 
+dynamic: FLAG += -DDYNAMIC
+dynamic: ${NAME}
+
 D_LST = $(OBJ:.o=.d)
 
 OBJ_DIR = obj/
@@ -21,10 +24,10 @@ $(NAME): $(OBJ)
 
 $(OBJ): obj_rep
 	make bonus -s -C lib/libft
-	$(CC) $(HEADER) $(FLAGS) $(LIB) -fPIC -I ./include -g3 -c src/malloc.c -o obj/malloc.o
+	$(CC) $(HEADER) $(FLAG) $(LIB) -fPIC -I ./include -g3 -c src/malloc.c -o obj/malloc.o
 
 %.so : $(OBJ)
-	$(CC) $(FLAGS) -fPIC $(HEADER) $(LIB) -c $< -o $@
+	$(CC) $(FLAG) -fPIC $(HEADER) $(LIB) -c $< -o $@
 
 test: $(NAME)
 	$(CC) $(HEADER) -Wall -Werror -Wextra  -I ./lib/unity/ -I ./ -g3 -c tests/test.c -o tests/test.o
