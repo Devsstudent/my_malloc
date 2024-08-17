@@ -55,7 +55,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 	int	alignement_needed = (size_t)((void *)buff + buff->size) % 8;
 	if (size + alignement_needed > free_space) {
 		alignement_needed = ft_abs(8 - alignement_needed);
-		if (size <= alignement_needed) {
+		if (size <= (size_t)alignement_needed) {
 			return ;
 		}
 		size -= alignement_needed;
@@ -90,12 +90,11 @@ bool	init_page(size_t size, t_pages *page) {
 bool	ask_new_page(size_t size, t_pages *page) {
 	printf("SIZE NEW PAGE %ld\n", size);
 	void *ptr = mmap(page->chunks, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-	t_chunk *buff = NULL;
 	if (!ptr) {
 		return (false);
 	}
 	if (ptr != page->chunks) {
-		t_chunk *first_base_addr = page->chunks;
+		//t_chunk *first_base_addr = page->chunks;
 		printf("new addr %p %p size %ld\n", ptr, page->chunks, page->page_nb * PAGE_SIZE);
 //		page->chunks = (t_chunk *) ptr;
 	//	if (munmap(previous_location, page->page_nb * PAGE_SIZE) < 0) {
@@ -199,7 +198,7 @@ void *ft_malloc(size_t size) {
 	current_pages->total_bytes_busy += size;
 	current_pages->total_bytes_free -= size;
 	alloc_addr = (void *) available_chunk + sizeof(t_chunk);
-	printf("total bytes free : %i asked size %ld\n", current_pages->total_bytes_free, size);
+	printf("total bytes free : %zu asked size %ld\n", current_pages->total_bytes_free, size);
 	if (!available_chunk->next) {
 		if (current_pages->total_bytes_free < size) {
 			return (NULL);
@@ -246,7 +245,7 @@ void ft_free(void *ptr) {
 	if (!ptr_page) {
 		return ;
 	}
-	printf("TYPE PAGE TO FREE : %i %i\n", ptr_page->type, ptr_page->busy_chunks);
+	printf("TYPE PAGE TO FREE : %i %zu\n", ptr_page->type, ptr_page->busy_chunks);
 	t_chunk *chunk_to_free = get_chunk(ptr, ptr_page);
 	printf("test %p %ld\n", chunk_to_free, chunk_to_free->size);
 	if (!chunk_to_free) {
@@ -270,6 +269,8 @@ void *ft_realloc(void *ptr, size_t size) {
 }
 
 #ifdef DYNAMIC
+
+//#warning "DYNAMIC is defined"
 void    *malloc(size_t size)
 {
     return ft_malloc(size);

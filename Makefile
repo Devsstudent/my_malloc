@@ -10,7 +10,7 @@ FLAG = -Wall -Werror -Wextra -g -MMD
 OBJ = $(addsuffix .o, $(addprefix obj/, malloc))
 CC = gcc
 
-dynamic: FLAG += -DDYNAMIC
+dynamic: FLAG += -D DYNAMIC=1
 dynamic: ${NAME}
 
 D_LST = $(OBJ:.o=.d)
@@ -24,7 +24,7 @@ $(NAME): $(OBJ)
 
 $(OBJ): obj_rep
 	make bonus -s -C lib/libft
-	$(CC) $(HEADER) $(FLAG) $(LIB) -fPIC -I ./include -g3 -c src/malloc.c -o obj/malloc.o
+	$(CC) $(HEADER) $(FLAG) -fPIC -I ./include -g3 -c src/malloc.c -o obj/malloc.o
 
 %.so : $(OBJ)
 	$(CC) $(FLAG) -fPIC $(HEADER) $(LIB) -c $< -o $@
