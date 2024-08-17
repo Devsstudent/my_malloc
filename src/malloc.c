@@ -277,7 +277,35 @@ void ft_free(void *ptr) {
 }
 
 void *ft_realloc(void *ptr, size_t size) {
-	return (realloc(ptr, size));
+	//To Do
+	//Look to change size of ptr to size
+	//If it is smaller than acutal, we just add a free chunk in between ptr and ptr->next
+	//else look after if there is a free chunk
+	//else call malloc and return the new address setting the previous to free
+	//copy content to the new address if it changes
+	void *res = NULL;
+	if (size == 0 && ptr) {
+		ft_free(ptr);
+		return (res);
+	}
+	if (!ptr && size > 0) {
+		res = ft_malloc(size);
+		if (res) {
+			return (res);
+		}
+	}
+	t_pages *ptr_page = get_ptr_page(ptr);
+	if (!ptr_page) {
+		return (res);
+	}
+	t_chunk *info_ptr = get_chunk(ptr, ptr_page);
+	if (info_ptr) {
+		res = ft_malloc(size);
+		ft_memcpy(res, ptr, info_ptr->size - sizeof(uint64_t));
+		ft_free(ptr);
+		return (res);
+	}
+	return res;
 }
 
 #ifdef DYNAMIC
