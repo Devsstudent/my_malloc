@@ -273,6 +273,9 @@ void *ft_realloc(void *ptr, size_t size) {
 //#warning "DYNAMIC is defined"
 void    *malloc(size_t size)
 {
+	static const char msg[] = "Custom malloc called\n";
+    write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    write(STDOUT_FILENO, msg, sizeof(msg) - 1);
     return ft_malloc(size);
 }
 void    free(void *ptr)

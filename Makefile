@@ -12,6 +12,7 @@ CC = gcc
 
 dynamic: FLAG += -D DYNAMIC=1
 dynamic: ${NAME}
+	gcc -shared -o $(NAME) $(OBJ) $(LIB)
 
 D_LST = $(OBJ:.o=.d)
 
@@ -20,14 +21,10 @@ OBJ_DIR = obj/
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CC) -shared -fPIC $(LIB) -o $(NAME) $(OBJ)
 
 $(OBJ): obj_rep
 	make bonus -s -C lib/libft
 	$(CC) $(HEADER) $(FLAG) -fPIC -I ./include -g3 -c src/malloc.c -o obj/malloc.o
-
-%.so : $(OBJ)
-	$(CC) $(FLAG) -fPIC $(HEADER) $(LIB) -c $< -o $@
 
 test: $(NAME)
 	$(CC) $(HEADER) -Wall -Werror -Wextra  -I ./lib/unity/ -I ./ -g3 -c tests/test.c -o tests/test.o
