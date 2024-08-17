@@ -31,9 +31,10 @@ size_t	get_current_free_space(t_pages *page) {
 }*/
 
 void	add_back(size_t size, void *addr, t_pages *page) {
-	printf("CALL ADDBACK\n");
+	write(2, "add back\n", 9);
+	//printf("CALL ADDBACK\n");
 	t_chunk *buff = page->chunks;
-	printf("size asked for the free block %ld %p\n", size, buff);
+	//printf("size asked for the free block %ld %p\n", size, buff);
 	if (!buff) {
 		page->chunks = (t_chunk *) (addr + sizeof(t_chunk));
 		page->chunks->size = size - sizeof(t_chunk);
@@ -41,7 +42,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 		page->free_chunks += 1;
 		page->last = page->chunks;
 		page->total_bytes_free = size;
-		printf("OUT ADDBACK %ld %ld \n", page->chunks->size, sizeof(t_chunk));
+		//printf("OUT ADDBACK %ld %ld \n", page->chunks->size, sizeof(t_chunk));
 		return ;
 	}
 	size_t	free_space = page->total_bytes_free;
@@ -69,11 +70,13 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 	new->state = FREE;
 	page->free_chunks += 1;
 	page->last = new;
-	printf("OUT ADDBACK %p\n", new);
+	//printf("OUT ADDBACK %p\n", new);
 }
 
 bool	init_page(size_t size, t_pages *page) {
-	printf("INIT PAGE\n");
+	write(1, "1", 1);
+	write(2, "init pages\n", 11);
+	ft_putstr_fd("INIT PAGE \n", STDERR_FILENO);
 	void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
 		return (false);
@@ -88,14 +91,15 @@ bool	init_page(size_t size, t_pages *page) {
 }
 
 bool	ask_new_page(size_t size, t_pages *page) {
-	printf("SIZE NEW PAGE %ld\n", size);
+	ft_putstr_fd("new page\n", STDERR_FILENO);
+	//printf("SIZE NEW PAGE %ld\n", size);
 	void *ptr = mmap(page->chunks, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
 		return (false);
 	}
 	if (ptr != page->chunks) {
 		//t_chunk *first_base_addr = page->chunks;
-		printf("new addr %p %p size %ld\n", ptr, page->chunks, page->page_nb * PAGE_SIZE);
+		//printf("new addr %p %p size %ld\n", ptr, page->chunks, page->page_nb * PAGE_SIZE);
 //		page->chunks = (t_chunk *) ptr;
 	//	if (munmap(previous_location, page->page_nb * PAGE_SIZE) < 0) {
 	//		return (false);
@@ -121,14 +125,17 @@ bool	ask_new_page(size_t size, t_pages *page) {
 }
 
 bool setup_pages(t_pages *current) {
-	printf("addr init first chunk %p \n", current->chunks);
+//	printf("addr init first chunk %p \n", current->chunks);
 	if (!current->chunks && current->type == TINY) {
 		if (!init_page(PAGE_SIZE * 10, current)) {
 			return (false);
 		}
 	}
 	if (!current->chunks && current->type == SMALL) {
+		ft_memset(current, 0, sizeof(current));
+		current->type = SMALL;
 		if (!init_page(PAGE_SIZE * 5, current)) {
+			write(2,"OUT2\n", 5);
 			return (false);
 		}
 	}
@@ -137,17 +144,19 @@ bool setup_pages(t_pages *current) {
 			return (false);
 		}
 	}
+	write(2,"OUT\n", 4);
 	return (true);
 }
 
 t_chunk *looking_for_chunk(t_pages *page, size_t size) {
 	t_chunk *buff = page->chunks;
 
-	printf("\n\n");
-			while (buff) {
+		while (buff) {
 				//Because size contain sizeof(chunk)
-		printf("state %i size %ld asked size %ld addr %p\n", buff->state, buff->size, size, buff);
+		//printf("state %i size %ld asked size %ld addr %p\n", buff->state, buff->size, size, buff);
 		if (buff->state == FREE && buff->size >= size) {
+			ft_putstr_fd("size of the finded block \n", STDERR_FILENO);
+			ft_putnbr_fd(buff->size, STDERR_FILENO);
 			return (buff);
 		}
 		buff = buff->next;
@@ -176,11 +185,14 @@ void *ft_malloc(size_t size) {
 	void *alloc_addr = NULL;
 
 	//Check sur quelle page de base on est SMALL MEDIUM ETC
+//	ft_putstr_fd("size ", STDERR_FILENO);
+//	ft_putnbr_fd(size, STDERR_FILENO);
 	t_pages *current_pages = get_current_page(size + sizeof(t_chunk));
 	if (!setup_pages(current_pages)) {
 		return (false);
 	}
 	//checker la taille du block, et verifier qu'on au moins 1 block free qui correspond
+	ft_putstr_fd("MDR", STDERR_FILENO);
 	t_chunk *available_chunk = looking_for_chunk(current_pages, size);
 	if (!available_chunk) {
 
@@ -198,14 +210,14 @@ void *ft_malloc(size_t size) {
 	current_pages->total_bytes_busy += size;
 	current_pages->total_bytes_free -= size;
 	alloc_addr = (void *) available_chunk + sizeof(t_chunk);
-	printf("total bytes free : %zu asked size %ld\n", current_pages->total_bytes_free, size);
+	//printf("total bytes free : %zu asked size %ld\n", current_pages->total_bytes_free, size);
 	if (!available_chunk->next) {
 		if (current_pages->total_bytes_free < size) {
 			return (NULL);
 		}
 		add_back(current_pages->total_bytes_free - size, (void *)available_chunk + available_chunk->size, current_pages);
 	}
-	printf("%p\n", alloc_addr);
+	//printf("%p\n", alloc_addr);
 	//split le chunk si le next n'est pas null
 	//return (current_pages->chunks->chunk_addr + sizeof(t_chunk));
 	return (alloc_addr);
@@ -213,7 +225,7 @@ void *ft_malloc(size_t size) {
 
 t_pages	*get_ptr_page(void *ptr) {
 
-	printf("wtf %p\n", ptr);
+	//printf("wtf %p\n", ptr);
 	if (alloc_info.tiny.busy_chunks != 0 && (size_t) ptr >= (size_t)(alloc_info.tiny.chunks) && (size_t) ptr <= (size_t)alloc_info.tiny.last) {
 		return (&alloc_info.tiny);
 	}
@@ -245,9 +257,9 @@ void ft_free(void *ptr) {
 	if (!ptr_page) {
 		return ;
 	}
-	printf("TYPE PAGE TO FREE : %i %zu\n", ptr_page->type, ptr_page->busy_chunks);
+	//printf("TYPE PAGE TO FREE : %i %zu\n", ptr_page->type, ptr_page->busy_chunks);
 	t_chunk *chunk_to_free = get_chunk(ptr, ptr_page);
-	printf("test %p %ld\n", chunk_to_free, chunk_to_free->size);
+	//printf("test %p %ld\n", chunk_to_free, chunk_to_free->size);
 	if (!chunk_to_free) {
 		return ;
 	}
@@ -257,7 +269,7 @@ void ft_free(void *ptr) {
 	ptr_page->total_bytes_busy -= chunk_to_free->size;
 	ptr_page->free_chunks += 1;
 	ptr_page->busy_chunks -= 1;
-	printf("GROUUU %ld %ld %ld\n", ptr_page->total_bytes_free, chunk_to_free->size,ptr_page->busy_chunks);
+	//printf("GROUUU %ld %ld %ld\n", ptr_page->total_bytes_free, chunk_to_free->size,ptr_page->busy_chunks);
 	if (ptr_page->busy_chunks == 0) {
 		munmap(ptr_page->chunks, ptr_page->page_nb * PAGE_SIZE);
 		ft_memset(ptr_page, 0, sizeof(t_pages));
@@ -273,24 +285,26 @@ void *ft_realloc(void *ptr, size_t size) {
 //#warning "DYNAMIC is defined"
 void    *malloc(size_t size)
 {
-	static const char msg[] = "Custom malloc called\n";
-    write(STDERR_FILENO, msg, sizeof(msg) - 1);
-    write(STDOUT_FILENO, msg, sizeof(msg) - 1);
+//    ft_putstr_fd("malloc\n", STDOUT_FILENO);
     return ft_malloc(size);
 }
 void    free(void *ptr)
 {
+    ft_putstr_fd("free\n", STDOUT_FILENO);
     ft_free(ptr);
 }
 
 void    *calloc(size_t nmemb, size_t size)
 {
-    return ft_calloc(nmemb, size);
+
+    ft_putstr_fd("calloc\n", STDOUT_FILENO);
+    return calloc(nmemb, size);
 }
 
 void    *realloc(void *ptr, size_t size)
 {
-    return ft_realloc(ptr, size);
+    ft_putstr_fd("realalloc\n", STDOUT_FILENO);
+    return realloc(ptr, size);
 
 }
 

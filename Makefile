@@ -12,7 +12,6 @@ CC = gcc
 
 dynamic: FLAG += -D DYNAMIC=1
 dynamic: ${NAME}
-	gcc -shared -o $(NAME) $(OBJ) $(LIB)
 
 D_LST = $(OBJ:.o=.d)
 
@@ -21,6 +20,8 @@ OBJ_DIR = obj/
 all: $(NAME)
 
 $(NAME): $(OBJ)
+	gcc -shared -o $(NAME) $(OBJ) $(LIB)
+
 
 $(OBJ): obj_rep
 	make bonus -s -C lib/libft
