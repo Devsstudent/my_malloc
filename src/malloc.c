@@ -31,8 +31,7 @@ size_t	get_current_free_space(t_pages *page) {
 }*/
 
 void	add_back(size_t size, void *addr, t_pages *page) {
-	write(2, "add back\n", 9);
-	//printf("CALL ADDBACK\n");
+	ft_printf("CALL ADDBACK\n");
 	t_chunk *buff = page->chunks;
 	//printf("size asked for the free block %ld %p\n", size, buff);
 	if (!buff) {
@@ -41,7 +40,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 		page->chunks->state = FREE;
 		page->free_chunks += 1;
 		page->last = page->chunks;
-		page->total_bytes_free = size;
+		page->total_bytes_free = size - sizeof(t_chunk);
 		//printf("OUT ADDBACK %ld %ld \n", page->chunks->size, sizeof(t_chunk));
 		return ;
 	}
@@ -62,6 +61,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 		size -= alignement_needed;
 	}
 	page->total_bytes_alignement += alignement_needed;
+	page->total_bytes_free -= alignement_needed;
 	buff->next = (t_chunk *) ((void *)buff +  sizeof(t_chunk) + buff->size + alignement_needed);
 	t_chunk *new = buff->next;
 	new->size = size - sizeof(t_chunk);
@@ -74,9 +74,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 }
 
 bool	init_page(size_t size, t_pages *page) {
-	write(1, "1", 1);
-	write(2, "init pages\n", 11);
-	ft_putstr_fd("INIT PAGE \n", STDERR_FILENO);
+	ft_printf("Init page type %i\n", page->type);
 	void *ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
 		return (false);
@@ -86,45 +84,48 @@ bool	init_page(size_t size, t_pages *page) {
 	} else {
 		page->page_nb = size / 4096;
 	}
+//	ft_printf("page nb %i type %i\n", page->page_nb, page->type);
 	add_back(size, ptr, page);
 	return (true);
 }
 
+
+//Idea functin that take a size and that transform it to the closeest PAGE_SIZE multiple
+
 bool	ask_new_page(size_t size, t_pages *page) {
-	ft_putstr_fd("new page\n", STDERR_FILENO);
 	//printf("SIZE NEW PAGE %ld\n", size);
 	void *ptr = mmap(page->chunks, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
+		ft_printf("new page failed\n");
 		return (false);
 	}
 	if (ptr != page->chunks) {
-		//t_chunk *first_base_addr = page->chunks;
-		//printf("new addr %p %p size %ld\n", ptr, page->chunks, page->page_nb * PAGE_SIZE);
-//		page->chunks = (t_chunk *) ptr;
-	//	if (munmap(previous_location, page->page_nb * PAGE_SIZE) < 0) {
-	//		return (false);
-	///	}
+		ft_printf("new page diff\n");
+		ft_printf("size %zu\n", size);
 		page->last->next = (t_chunk *) ptr;
 		page->last = page->last->next;
-		page->last->size = size;
+		page->last->size = size - sizeof(t_chunk);
 		page->last->alignement = 0;
 		page->last->state = FREE;
+	} else {
+		ft_printf("new page not failed, different\n");
 	}
 	//printf("%p %ld %ld\n", buff, buff->state, buff->size);
 	if (size % 4096 != 0) {
-		page->page_nb = size / 4096 + 1;
+		page->page_nb += size / 4096 + 1;
 	} else {
-		page->page_nb = size / 4096;
+		page->page_nb += size / 4096;
 	}
-	page->total_bytes_free += size;
-	if (page->last->state == FREE && ptr != page->chunks) {
+	page->total_bytes_free += size - sizeof(t_chunk);
+	if (page->last->state == FREE && ptr == page->chunks) {
 		page->last->size += size;
 	}
 	page->last->next = NULL;
+	show_alloc_mem();
 	return (true);
 }
 
-bool setup_pages(t_pages *current) {
+bool setup_pages(t_pages *current, size_t size) {
 //	printf("addr init first chunk %p \n", current->chunks);
 	if (!current->chunks && current->type == TINY) {
 		if (!init_page(PAGE_SIZE * 10, current)) {
@@ -132,31 +133,28 @@ bool setup_pages(t_pages *current) {
 		}
 	}
 	if (!current->chunks && current->type == SMALL) {
-		ft_memset(current, 0, sizeof(current));
-		current->type = SMALL;
-		if (!init_page(PAGE_SIZE * 5, current)) {
-			write(2,"OUT2\n", 5);
+		if (!init_page(PAGE_SIZE * 12, current)) {
 			return (false);
 		}
 	}
 	if (!current->chunks && current->type == LARGE) {
-		if (!init_page(PAGE_SIZE * 3, current)) {
+		if (size > (size_t) (PAGE_SIZE * 100) && !init_page(size + sizeof(t_chunk), current)) {
+			return (false);
+		} else if (!init_page(PAGE_SIZE * 100, current)) {
 			return (false);
 		}
 	}
-	write(2,"OUT\n", 4);
 	return (true);
 }
 
 t_chunk *looking_for_chunk(t_pages *page, size_t size) {
 	t_chunk *buff = page->chunks;
-
+	ft_printf("size requested %zu\n", size);
 		while (buff) {
 				//Because size contain sizeof(chunk)
 		//printf("state %i size %ld asked size %ld addr %p\n", buff->state, buff->size, size, buff);
 		if (buff->state == FREE && buff->size >= size) {
-			ft_putstr_fd("size of the finded block \n", STDERR_FILENO);
-			ft_putnbr_fd(buff->size, STDERR_FILENO);
+			ft_printf("size of the fineded block %zu\n", buff->size);
 			return (buff);
 		}
 		buff = buff->next;
@@ -187,37 +185,46 @@ void *ft_malloc(size_t size) {
 	//Check sur quelle page de base on est SMALL MEDIUM ETC
 //	ft_putstr_fd("size ", STDERR_FILENO);
 //	ft_putnbr_fd(size, STDERR_FILENO);
-	t_pages *current_pages = get_current_page(size + sizeof(t_chunk));
-	if (!setup_pages(current_pages)) {
+	t_pages *current_pages = get_current_page(size);
+	if (!setup_pages(current_pages, size)) {
 		return (false);
 	}
+	ft_printf("page type %i\n", current_pages->type);
 	//checker la taille du block, et verifier qu'on au moins 1 block free qui correspond
-	ft_putstr_fd("MDR", STDERR_FILENO);
 	t_chunk *available_chunk = looking_for_chunk(current_pages, size);
 	if (!available_chunk) {
 
 		//new page mmap sur la page
-		//ce qui implique le deplacement des donnee en memoire
+
+		//Why assking that much ??
 		ask_new_page(PAGE_SIZE * current_pages->page_nb + size + sizeof(t_chunk), current_pages);
 		//Always last block free, otherwise must addback
 		available_chunk = current_pages->last;
+		ft_printf("size asdked%zu\n", size);
+		ft_printf("%p %zu\n", available_chunk);
 //	else  maybe create a block
 	}
+	size_t free_space_last_chunk = available_chunk->size;
 	available_chunk->state = BUSY;
 	available_chunk->size = size;
 	current_pages->busy_chunks += 1;
 	current_pages->free_chunks -= 1;
+	//ft_printf("free before:%zu\n", current_pages->total_bytes_free);
 	current_pages->total_bytes_busy += size;
 	current_pages->total_bytes_free -= size;
+	//ft_printf("free after:%zu\n", current_pages->total_bytes_free);
 	alloc_addr = (void *) available_chunk + sizeof(t_chunk);
 	//printf("total bytes free : %zu asked size %ld\n", current_pages->total_bytes_free, size);
 	if (!available_chunk->next) {
-		if (current_pages->total_bytes_free < size) {
-			return (NULL);
-		}
-		add_back(current_pages->total_bytes_free - size, (void *)available_chunk + available_chunk->size, current_pages);
+//		if (current_pages->total_bytes_free < size) {
+//			return (NULL);
+//		}
+		add_back(free_space_last_chunk - size + sizeof(t_chunk), (void *)alloc_addr + available_chunk->size, current_pages);
+	} else {
+		//insert entre le chunk et le suivant le reste du chunk
+		ft_printf("il y a un next\n");
 	}
-	//printf("%p\n", alloc_addr);
+	//printf("%p\n", alloc_addr);k
 	//split le chunk si le next n'est pas null
 	//return (current_pages->chunks->chunk_addr + sizeof(t_chunk));
 	return (alloc_addr);
@@ -249,6 +256,9 @@ t_chunk *get_chunk(void *ptr, t_pages *ptr_page) {
 	return (NULL);
 }
 
+
+//Pour le free : Checker dans get_chunk lentre deux chunk (pour free meme au milieux d'un chunk
+
 void ft_free(void *ptr) {
 	if (!ptr) {
 		return;
@@ -276,6 +286,8 @@ void ft_free(void *ptr) {
 	}
 }
 
+
+//Pour le realloc, comme pour le free, si address au milieux augmenter la size etc
 void *ft_realloc(void *ptr, size_t size) {
 	//To Do
 	//Look to change size of ptr to size
@@ -283,6 +295,7 @@ void *ft_realloc(void *ptr, size_t size) {
 	//else look after if there is a free chunk
 	//else call malloc and return the new address setting the previous to free
 	//copy content to the new address if it changes
+	ft_printf("%p %zu call realooc\n", ptr, size);
 	void *res = NULL;
 	if (size == 0 && ptr) {
 		ft_free(ptr);
@@ -301,11 +314,45 @@ void *ft_realloc(void *ptr, size_t size) {
 	t_chunk *info_ptr = get_chunk(ptr, ptr_page);
 	if (info_ptr) {
 		res = ft_malloc(size);
-		ft_memcpy(res, ptr, info_ptr->size - sizeof(uint64_t));
+		ft_memcpy(res, ptr, info_ptr->size);
 		ft_free(ptr);
 		return (res);
 	}
 	return res;
+}
+
+size_t	browse_chunks(t_pages *pages) {
+	t_chunk	*chunk = pages->chunks;
+	if (!chunk) {
+		return 0;
+	}
+	t_chunk *next = chunk->next;
+	size_t	alloced_bytes = 0;
+	size_t	free_bytes = 0;
+	while (chunk) {
+		next = chunk->next;
+		if (chunk->state == BUSY) {
+			ft_printf("%p - %p: %zu bytes\n", chunk, next, chunk->size);
+			alloced_bytes += chunk->size;
+		} else {
+			ft_printf("FREE ? %p - %p: %zu bytes\n", chunk, next, chunk->size);
+			free_bytes += chunk->size;
+		}
+		chunk = next;
+	}
+	ft_printf("free total = %zu in memory %zu\n", free_bytes, pages->total_bytes_free);
+	return alloced_bytes;
+}
+
+void	show_alloc_mem() {
+	size_t	alloced_bytes = 0;
+	ft_printf("%s %p\n", "TINY:", alloc_info.tiny.chunks);
+	alloced_bytes += browse_chunks(&alloc_info.tiny);
+	ft_printf("%s %p\n", "SMALL:", alloc_info.small.chunks);
+	alloced_bytes += browse_chunks(&alloc_info.small);
+	ft_printf("%s %p\n", "LARGE:", alloc_info.large.chunks);
+	alloced_bytes += browse_chunks(&alloc_info.large);
+	ft_printf("Total alloc: %zu bytes\n", alloced_bytes);
 }
 
 #ifdef DYNAMIC
@@ -314,7 +361,10 @@ void *ft_realloc(void *ptr, size_t size) {
 void    *malloc(size_t size)
 {
 //    ft_putstr_fd("malloc\n", STDOUT_FILENO);
-    return ft_malloc(size);
+    void *ptr = ft_malloc(size);
+	//show_alloc_mem();
+	ft_printf("%p returned\n", ptr);
+	return (ptr);
 }
 void    free(void *ptr)
 {
@@ -322,17 +372,21 @@ void    free(void *ptr)
     ft_free(ptr);
 }
 
-void    *calloc(size_t nmemb, size_t size)
-{
-
-    ft_putstr_fd("calloc\n", STDOUT_FILENO);
-    return calloc(nmemb, size);
+void	*calloc(size_t nmemb, size_t size) {
+	void *ptr = ft_malloc(size * nmemb);
+	if (!ptr) {
+		return (NULL);
+	}
+	ft_memset(ptr, 0, nmemb * size);
+	return (ptr);
 }
 
 void    *realloc(void *ptr, size_t size)
 {
-    ft_putstr_fd("realalloc\n", STDOUT_FILENO);
-    return realloc(ptr, size);
+	void *ptr2 = ft_realloc(ptr, size);
+    ptr2 = ft_realloc(ptr, size);
+	show_alloc_mem();
+	return (ptr2);
 
 }
 

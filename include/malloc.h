@@ -56,4 +56,6 @@ void ft_free(void *ptr);
 extern t_chunk *looking_for_chunk(t_pages *page, size_t size);
 extern t_chunk *get_chunk(void *ptr, t_pages *ptr_page);
 
+extern	void	show_alloc_mem();
+
 #endif

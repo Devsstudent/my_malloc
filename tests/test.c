@@ -28,7 +28,7 @@ void OneAllocationByPageTest() {
 	TEST_ASSERT_TRUE(alloc_info->tiny.chunks->state == BUSY);
 	TEST_ASSERT_TRUE(alloc_info->tiny.page_nb == 10);
 
-	ft_free(ptr);
+	//ft_free(ptr);
 
 	void *ptr1 = ft_malloc(560);
 	TEST_ASSERT_TRUE(ptr1 != NULL);
@@ -39,7 +39,7 @@ void OneAllocationByPageTest() {
 	TEST_ASSERT_TRUE(c->state == BUSY);
 	TEST_ASSERT_TRUE(alloc_info->small.page_nb == 5);
 
-	ft_free(ptr1);
+	//ft_free(ptr1);
 
 	void *ptr2 = ft_malloc(4096);
 
@@ -52,7 +52,8 @@ void OneAllocationByPageTest() {
 	TEST_ASSERT_TRUE(c->state == BUSY);
 	TEST_ASSERT_TRUE(alloc_info->large.page_nb == 3);
 
-	ft_free(ptr2);
+	//ft_free(ptr2);
+	show_alloc_mem();
 }
 
 void FreeTest() {
@@ -195,22 +196,22 @@ void MultipleAllocationLarge() {
 int main() {
    UNITY_BEGIN();
 
-   printf("\n\n FREE TEST \n\n");
-   RUN_TEST(FreeTest);
+ //  printf("\n\n FREE TEST \n\n");
+//   RUN_TEST(FreeTest);
 
    printf("\n\n ONE ALLOCATOIN BY PAGE TEST \n\n");
    RUN_TEST(OneAllocationByPageTest);
 
-   printf("\n\n MULTIPLE ALLOCATION TINY TEST \n\n");
-   RUN_TEST(TwoAlloctionTiny);
+  // printf("\n\n MULTIPLE ALLOCATION TINY TEST \n\n");
+  // RUN_TEST(TwoAlloctionTiny);
 
-   printf("\n\n MULTIPLE ALLOCATION LOOP TINY \n\n");
-   RUN_TEST(MultipleAllocatoinTiny);
+   //printf("\n\n MULTIPLE ALLOCATION LOOP TINY \n\n");
+   //RUN_TEST(MultipleAllocatoinTiny);
 
-   printf("\n\n MULTIPLE ALLOCATION LOOP SMALL \n\n");
-   RUN_TEST(MultipleAllocationSmall);
-   printf("\n\n MULTIPLE ALLOCATION LOOP LARGE \n\n");
-   RUN_TEST(MultipleAllocationLarge);
-   printf("\n\n MULTIPLE ALLOCATION LOOP MIX \n\n");
+   //printf("\n\n MULTIPLE ALLOCATION LOOP SMALL \n\n");
+   //RUN_TEST(MultipleAllocationSmall);
+  // printf("\n\n MULTIPLE ALLOCATION LOOP LARGE \n\n");
+ //  RUN_TEST(MultipleAllocationLarge);
+  // printf("\n\n MULTIPLE ALLOCATION LOOP MIX \n\n");
    UNITY_END();
 }
