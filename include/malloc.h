@@ -53,6 +53,7 @@ extern t_alloc_info *get_info(void);
 void	*ft_malloc(size_t size);
 void *ft_realloc(void *ptr, size_t size);
 void ft_free(void *ptr);
+void	insert_free_chunk_in_between(size_t free_space, void *addr, t_pages *current_page, t_chunk *base_chunk);
 extern t_chunk *looking_for_chunk(t_pages *page, size_t size);
 extern t_chunk *get_chunk(void *ptr, t_pages *ptr_page);
 

@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   malloc.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/08/19 18:33:21 by odessein          #+#    #+#             */
+/*   Updated: 2024/08/19 19:06:13 by odessein         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "malloc.h"
 //Global
 t_alloc_info alloc_info;
@@ -40,36 +52,36 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 		page->chunks->state = FREE;
 		page->free_chunks += 1;
 		page->last = page->chunks;
-		page->total_bytes_free = size - sizeof(t_chunk);
+	//	page->total_bytes_free += size - sizeof(t_chunk);
 		//printf("OUT ADDBACK %ld %ld \n", page->chunks->size, sizeof(t_chunk));
 		return ;
 	}
-	size_t	free_space = page->total_bytes_free;
+//	size_t	free_space = page->total_bytes_free;
 	/*
 	if (page->total_bytes_free < size || page->total_bytes_free - sizeof(t_chunk) <= 0) {
 		return ;
 	}*/
-	while (buff->next) {
-		buff = buff->next;
-	}
+	t_chunk *last = page->last;
 	int	alignement_needed = (size_t)((void *)buff + buff->size) % 8;
-	if (size + alignement_needed > free_space) {
-		alignement_needed = ft_abs(8 - alignement_needed);
-		if (size <= (size_t)alignement_needed) {
-			return ;
-		}
-		size -= alignement_needed;
-	}
+//	if (size + alignement_needed > free_space) {
+//		alignement_needed = ft_abs(8 - alignement_needed);
+//		if (size <= (size_t)alignement_needed) {
+//			return ;
+//		}
+//		size -= alignement_needed;
+//	}
 	page->total_bytes_alignement += alignement_needed;
-	page->total_bytes_free -= alignement_needed;
-	buff->next = (t_chunk *) ((void *)buff +  sizeof(t_chunk) + buff->size + alignement_needed);
-	t_chunk *new = buff->next;
-	new->size = size - sizeof(t_chunk);
+	//page->total_bytes_free -= alignement_needed;
+	last->next = (t_chunk *) ((void *)last +  sizeof(t_chunk) + last->size + alignement_needed);
+	t_chunk *new = last->next;
+	ft_printf("siiize %i, ali %i\n", size, alignement_needed);
+	new->size = size;
 	new->next = NULL;
 	new->alignement = alignement_needed;
 	new->state = FREE;
 	page->free_chunks += 1;
 	page->last = new;
+	//page->total_bytes_free += new->size;
 	//printf("OUT ADDBACK %p\n", new);
 }
 
@@ -79,6 +91,7 @@ bool	init_page(size_t size, t_pages *page) {
 	if (!ptr) {
 		return (false);
 	}
+	ft_memset(page, 0, sizeof(t_pages));
 	if (size % 4096 != 0) {
 		page->page_nb = size / 4096 + 1;
 	} else {
@@ -94,21 +107,28 @@ bool	init_page(size_t size, t_pages *page) {
 
 bool	ask_new_page(size_t size, t_pages *page) {
 	//printf("SIZE NEW PAGE %ld\n", size);
-	void *ptr = mmap(page->chunks, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+	size_t	real_mmap_allocated_size = size % 4096 != 0 ? size / 4096 + 1 : size / 4096;
+	void *ptr = mmap(page->chunks, real_mmap_allocated_size * PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	if (!ptr) {
 		ft_printf("new page failed\n");
 		return (false);
 	}
+	real_mmap_allocated_size = real_mmap_allocated_size * PAGE_SIZE;
+
+	ft_printf("size asked burh %i \n", real_mmap_allocated_size);
+
 	if (ptr != page->chunks) {
-		ft_printf("new page diff\n");
-		ft_printf("size %zu\n", size);
+		ft_printf("new page diff %i\n", page->type);
+		ft_printf("size %zu\n", real_mmap_allocated_size);
 		page->last->next = (t_chunk *) ptr;
 		page->last = page->last->next;
-		page->last->size = size - sizeof(t_chunk);
+		page->last->size = real_mmap_allocated_size - sizeof(t_chunk);
 		page->last->alignement = 0;
 		page->last->state = FREE;
+		page->free_chunks += 1;
+		//page->total_bytes_free += page->last->size;
 	} else {
-		ft_printf("new page not failed, different\n");
+		ft_printf("new page not failed same add\n");
 	}
 	//printf("%p %ld %ld\n", buff, buff->state, buff->size);
 	if (size % 4096 != 0) {
@@ -116,12 +136,11 @@ bool	ask_new_page(size_t size, t_pages *page) {
 	} else {
 		page->page_nb += size / 4096;
 	}
-	page->total_bytes_free += size - sizeof(t_chunk);
-	if (page->last->state == FREE && ptr == page->chunks) {
-		page->last->size += size;
-	}
+//	if (page->last->state == FREE && ptr == page->chunks) {
+//		page->last->size += size;
+//	}
 	page->last->next = NULL;
-	show_alloc_mem();
+	//show_alloc_mem();
 	return (true);
 }
 
@@ -180,54 +199,81 @@ t_alloc_info *get_info(void){
 }
 
 void *ft_malloc(size_t size) {
+
 	void *alloc_addr = NULL;
 
-	//Check sur quelle page de base on est SMALL MEDIUM ETC
-//	ft_putstr_fd("size ", STDERR_FILENO);
-//	ft_putnbr_fd(size, STDERR_FILENO);
 	t_pages *current_pages = get_current_page(size);
 	if (!setup_pages(current_pages, size)) {
 		return (false);
 	}
 	ft_printf("page type %i\n", current_pages->type);
+
 	//checker la taille du block, et verifier qu'on au moins 1 block free qui correspond
 	t_chunk *available_chunk = looking_for_chunk(current_pages, size);
 	if (!available_chunk) {
-
 		//new page mmap sur la page
 
 		//Why assking that much ??
-		ask_new_page(PAGE_SIZE * current_pages->page_nb + size + sizeof(t_chunk), current_pages);
+		//ask_new_page(PAGE_SIZE * current_pages->page_nb + size + sizeof(t_chunk), current_pages);
+		ask_new_page(size + sizeof(t_chunk), current_pages);
 		//Always last block free, otherwise must addback
 		available_chunk = current_pages->last;
 		ft_printf("size asdked%zu\n", size);
-		ft_printf("%p %zu\n", available_chunk);
-//	else  maybe create a block
+		ft_printf("%p %zu %i\n", available_chunk, size, available_chunk->state);
+		//	else  maybe create a block
 	}
 	size_t free_space_last_chunk = available_chunk->size;
 	available_chunk->state = BUSY;
 	available_chunk->size = size;
 	current_pages->busy_chunks += 1;
 	current_pages->free_chunks -= 1;
-	//ft_printf("free before:%zu\n", current_pages->total_bytes_free);
+//	ft_printf("free before:%zu size %zu\n", current_pages->total_bytes_free, size);
 	current_pages->total_bytes_busy += size;
-	current_pages->total_bytes_free -= size;
-	//ft_printf("free after:%zu\n", current_pages->total_bytes_free);
+//	current_pages->total_bytes_free -= size;
+//	ft_printf("free after:%zu size %zu\n", current_pages->total_bytes_free, size);
 	alloc_addr = (void *) available_chunk + sizeof(t_chunk);
+	ft_printf("ci %p %zu\n", alloc_addr, sizeof(t_chunk));
 	//printf("total bytes free : %zu asked size %ld\n", current_pages->total_bytes_free, size);
+	int free_space_left_in_chunk = (int)free_space_last_chunk - (int)((sizeof(t_chunk) + size));
+	if (free_space_left_in_chunk <= 0) {
+		ft_printf("WTF, space left %i, size : %zu \n", free_space_left_in_chunk, size);
+		return (alloc_addr);
+	}
 	if (!available_chunk->next) {
 //		if (current_pages->total_bytes_free < size) {
 //			return (NULL);
 //		}
-		add_back(free_space_last_chunk - size + sizeof(t_chunk), (void *)alloc_addr + available_chunk->size, current_pages);
+//		ici sizeof(t_chunk) est la taille du chunk availble qu'on a fill (qui n'est pas dispo)
+		add_back(free_space_left_in_chunk, NULL, current_pages);
 	} else {
 		//insert entre le chunk et le suivant le reste du chunk
-		ft_printf("il y a un next\n");
+		ft_printf("test %i %i %i %i\n", free_space_last_chunk, free_space_last_chunk - (sizeof(t_chunk) + size), 100000, size);
+		insert_free_chunk_in_between(free_space_last_chunk - (size + sizeof(t_chunk)), (void *) alloc_addr + available_chunk->size, current_pages, available_chunk);
 	}
 	//printf("%p\n", alloc_addr);k
 	//split le chunk si le next n'est pas null
 	//return (current_pages->chunks->chunk_addr + sizeof(t_chunk));
 	return (alloc_addr);
+}
+
+void	insert_free_chunk_in_between(size_t free_space, void *addr, t_pages *current_page, t_chunk *base_chunk) {
+
+	int	alignement_needed = (size_t)(addr) % 8;    
+	if (free_space <= sizeof(t_chunk) + alignement_needed) {
+		return ;
+	}
+
+	t_chunk *next_chunk = base_chunk->next;
+	base_chunk->next = (t_chunk *)((void *)(addr + alignement_needed));
+	t_chunk *new = base_chunk->next;
+	new->size = free_space - sizeof(t_chunk) - alignement_needed;
+	new->next = next_chunk;
+	new->alignement = alignement_needed;
+	new->state = FREE;
+	current_page->free_chunks += 1;
+	current_page->total_bytes_alignement += alignement_needed;
+	//current_page->total_bytes_free += new->size;
+	ft_printf("%p %p new size %zu\n", next_chunk, base_chunk->next, new->size);
 }
 
 t_pages	*get_ptr_page(void *ptr) {
@@ -275,7 +321,7 @@ void ft_free(void *ptr) {
 	}
 	//fonction de changement d'etat ? 
 	chunk_to_free->state = FREE;
-	ptr_page->total_bytes_free += chunk_to_free->size;
+	//ptr_page->total_bytes_free += chunk_to_free->size;
 	ptr_page->total_bytes_busy -= chunk_to_free->size;
 	ptr_page->free_chunks += 1;
 	ptr_page->busy_chunks -= 1;
@@ -328,6 +374,7 @@ size_t	browse_chunks(t_pages *pages) {
 	}
 	t_chunk *next = chunk->next;
 	size_t	alloced_bytes = 0;
+	size_t	free_chunks = 0;
 	size_t	free_bytes = 0;
 	while (chunk) {
 		next = chunk->next;
@@ -337,10 +384,11 @@ size_t	browse_chunks(t_pages *pages) {
 		} else {
 			ft_printf("FREE ? %p - %p: %zu bytes\n", chunk, next, chunk->size);
 			free_bytes += chunk->size;
+			free_chunks += 1;
 		}
 		chunk = next;
 	}
-	ft_printf("free total = %zu in memory %zu\n", free_bytes, pages->total_bytes_free);
+	ft_printf("free total = %zu in memory %zu\nfree_chunks :%zu in memory, real : %zu\n", free_bytes, pages->total_bytes_free, pages->free_chunks, free_chunks);
 	return alloced_bytes;
 }
 
@@ -384,8 +432,6 @@ void	*calloc(size_t nmemb, size_t size) {
 void    *realloc(void *ptr, size_t size)
 {
 	void *ptr2 = ft_realloc(ptr, size);
-    ptr2 = ft_realloc(ptr, size);
-	show_alloc_mem();
 	return (ptr2);
 
 }
