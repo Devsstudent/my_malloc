@@ -50,6 +50,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 		page->chunks = (t_chunk *) (addr + sizeof(t_chunk));
 		page->chunks->size = size - sizeof(t_chunk);
 		page->chunks->state = FREE;
+		page->chunks->page_type = page->type;
 		page->free_chunks += 1;
 		page->last = page->chunks;
 	//	page->total_bytes_free += size - sizeof(t_chunk);
@@ -79,6 +80,7 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 	new->next = NULL;
 	new->alignement = alignement_needed;
 	new->state = FREE;
+	new->page_type = page->type;
 	page->free_chunks += 1;
 	page->last = new;
 	//page->total_bytes_free += new->size;
@@ -120,12 +122,16 @@ bool	ask_new_page(size_t size, t_pages *page) {
 	if (ptr != page->chunks) {
 		ft_printf("new page diff %i\n", page->type);
 		ft_printf("size %zu\n", real_mmap_allocated_size);
+		ft_printf("%p\n", page->last);
+		t_chunk *bb = page->last;
 		page->last->next = (t_chunk *) ptr;
 		page->last = page->last->next;
 		page->last->size = real_mmap_allocated_size - sizeof(t_chunk);
 		page->last->alignement = 0;
+		page->last->page_type = page->type;
 		page->last->state = FREE;
 		page->free_chunks += 1;
+		ft_printf("%p %p %pnext\n", page->last, bb, bb->next);
 		//page->total_bytes_free += page->last->size;
 	} else {
 		ft_printf("new page not failed same add\n");
@@ -260,6 +266,8 @@ void	insert_free_chunk_in_between(size_t free_space, void *addr, t_pages *curren
 
 	int	alignement_needed = (size_t)(addr) % 8;    
 	if (free_space <= sizeof(t_chunk) + alignement_needed) {
+		//soit faire le cas valeur absolue on soutrait au lieux d'ajouter pour obtenir l'
+		ft_printf("%i %i\n", free_space, alignement_needed + sizeof(t_chunk));
 		return ;
 	}
 
@@ -270,6 +278,7 @@ void	insert_free_chunk_in_between(size_t free_space, void *addr, t_pages *curren
 	new->next = next_chunk;
 	new->alignement = alignement_needed;
 	new->state = FREE;
+	new->page_type = current_page->type;
 	current_page->free_chunks += 1;
 	current_page->total_bytes_alignement += alignement_needed;
 	//current_page->total_bytes_free += new->size;
@@ -278,19 +287,22 @@ void	insert_free_chunk_in_between(size_t free_space, void *addr, t_pages *curren
 
 t_pages	*get_ptr_page(void *ptr) {
 
-	//printf("wtf %p\n", ptr);
-	if (alloc_info.tiny.busy_chunks != 0 && (size_t) ptr >= (size_t)(alloc_info.tiny.chunks) && (size_t) ptr <= (size_t)alloc_info.tiny.last) {
-		return (&alloc_info.tiny);
+	t_chunk *chunk_info = ptr - sizeof(t_chunk);
+	switch (chunk_info->page_type) {
+		case 0:
+			return (&alloc_info.tiny);
+		case 1:
+			return (&alloc_info.small);
+		case 2:
+			return (&alloc_info.large);
+		default:
+			return (NULL);
 	}
-	if (alloc_info.small.busy_chunks != 0 && alloc_info.small.chunks && (size_t) ptr >= (size_t)(alloc_info.small.chunks) && (size_t) ptr <= (size_t)alloc_info.small.last) {
-		return (&alloc_info.small);
-	}
-	if (alloc_info.large.busy_chunks != 0 && alloc_info.large.chunks && (size_t) ptr >= (size_t)(alloc_info.large.chunks) && (size_t) ptr <= (size_t)alloc_info.large.last) {
-		return (&alloc_info.large);
-	}
-	return (NULL);
 }
 
+//Verifie l'existence du chunk dans la page (dans la liste chaine)
+
+//On peux rajouter le merge, si on a un free on check si le suivant est free
 t_chunk *get_chunk(void *ptr, t_pages *ptr_page) {
 	t_chunk *buff = ptr_page->chunks;
 	while (buff) {
@@ -353,14 +365,18 @@ void *ft_realloc(void *ptr, size_t size) {
 			return (res);
 		}
 	}
+	ft_printf("testbis\n");
 	t_pages *ptr_page = get_ptr_page(ptr);
 	if (!ptr_page) {
 		return (res);
 	}
+	ft_printf("test1\n");
 	t_chunk *info_ptr = get_chunk(ptr, ptr_page);
+	ft_printf("test\n");
 	if (info_ptr) {
 		res = ft_malloc(size);
-		ft_memcpy(res, ptr, info_ptr->size);
+		ft_printf("size ptr %zu %p\n", info_ptr->size, info_ptr);
+		ft_memcpy(res, ptr, size);
 		ft_free(ptr);
 		return (res);
 	}
@@ -432,6 +448,7 @@ void	*calloc(size_t nmemb, size_t size) {
 void    *realloc(void *ptr, size_t size)
 {
 	void *ptr2 = ft_realloc(ptr, size);
+	//show_alloc_mem();
 	return (ptr2);
 
 }

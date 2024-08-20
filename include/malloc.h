@@ -23,6 +23,7 @@ typedef struct chunk {
 	size_t				size;
 	size_t				alignement;
 	t_state				state;
+	t_type				page_type;
 	struct chunk		*next ;
 	//Prev ?
 }	t_chunk;
