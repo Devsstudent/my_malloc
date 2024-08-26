@@ -23,8 +23,7 @@ char	*get_next_line(int fd)
 	if (!line)
 		return (NULL);
 	*line = 0;
-	if (*buff != 0)
-		line = gnl_strjoin(line, buff[fd]);
+	line = gnl_strjoin(line, buff[fd]);
 	if (ft_check_line(line))
 		ft_reset_buff(buff[fd]);
 	line = gnl_loop(line, buff[fd], fd);

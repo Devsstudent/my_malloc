@@ -6,7 +6,7 @@ endif
 NAME = libft_malloc_$(HOSTTYPE).so
 LIB = -L ./lib/libft/ -lft
 HEADER = -I ./include -I ./lib/libft
-FLAG = -Wall -Werror -Wextra -g -MMD
+FLAG = -Wall  -Wextra -g -MMD
 OBJ = $(addsuffix .o, $(addprefix obj/, malloc))
 CC = gcc
 

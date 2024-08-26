@@ -1,0 +1,12 @@
+soit on ecrit sur de la memoire ce qui fait de la merde
+
+le probleme semble venir des tiny, mais a verifier
+
+comme on ne free pas le bloque ne peux pas grossir, on est cense addback a l'infi en reduisant la taille du dernier, sauf ask new page case
+
+bon ca fait bien des ask new page, le pb doit venir de la 
+
+i 26 j 499 0xffff86ef36e4
+i 27 j 0 0x1f538fe
+
+wtf
