@@ -1,0 +1,19 @@
+### Review of the algorithm
+- We gonna make 3 different type of page (TINY, SMALL, LARGE)
+- Each Zone will be of size (size of zone. 100 Blocks of SizeMaxOfBlock in Zone) Large one will be particular
+- So each Zone will point to the next one etc, so easier to track
+- In each Zone there will be blocks of (sizeMaxOfBlocks maximum) depending on the ZoneType / Page
+- Those blocks will be a double linked list prev next
+- If we dont have enough space left in the zone, we ask for a new zone of Page/ZoneType Size
+- We store metadata of the zone on each start of the zone, same for the blocks on each start of a block
+- This part is important, how to store the start addrs, the return addr etc
+- Always align size requested on (size + 15) & ~15 to keep memory aligned
+
+
+This way should provide a simple mallocateur
+
+There is also free to code, easy, just merge block if necessary, prev and next to keep more space, erase meta in the case
+
+For realloc same, check next and prev to arrange the space
+
+For the thread just add mutex on the chooseBlockFunction
