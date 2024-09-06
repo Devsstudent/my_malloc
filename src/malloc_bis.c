@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/04 22:39:49 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/06 21:44:38 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,9 +54,7 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 		if (mem_zone) {
 			//en theorie a ce moment faut aussi cree le chunk free
 			state = true;
-			mem_zone->next = NULL;
-			mem_zone->first = NULL;
-			mem_zone->page_type = zone_type;
+			new_mem_zone(mem_zone, zone_type);
 		}
 	}
 	//Meaning  on est pas passer au dessus
@@ -70,9 +68,29 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			//en theorie a ce moment faut aussi cree le chunk free
 			//fill les info de la struct, faire une function new_mem_zone genre
 			mem_zone->next = new_zone;
+			new_mem_zone(new_zone, zone_type);
 		}
 	}
 	return (state);
+}
+
+void	new_mem_zone(t_mem_zone *zone, t_type type) {
+	zone->free_chunks = 1;
+	zone->busy_chunks = 0;
+	zone->next = NULL;
+	zone->page_type = type;
+	zone->max_size_availbale = (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone);
+	zone->first = new_chunk(zone + sizeof(t_mem_zone), FREE, type, zone->max_size_availbale);
+}
+
+t_chunk *new_chunk(void *chunk_addr, t_state state, t_type zone_type, size_t size) {
+	t_chunk *new_chunk = chunk_addr;
+	new_chunk->size = size;
+	new_chunk->state = state;
+	new_chunk->zone_type = zone_type;
+	new_chunk->next = NULL;
+	new_chunk->prev = NULL;
+	return (new_chunk);
 }
 
 t_mem_zone *get_tiny_or_small_zone(t_type type) {

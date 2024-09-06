@@ -32,7 +32,7 @@ typedef struct mem_zone {
 	size_t			busy_chunks;
 	struct mem_zone	*next;
 	t_chunk			*first;
-	t_type			page_type;
+	t_type			zone_type;
 	size_t			max_size_available;
 }	t_mem_zone;
 
