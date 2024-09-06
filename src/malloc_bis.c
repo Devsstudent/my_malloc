@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/06 21:44:38 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/06 22:30:54 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,13 @@ void *ft_malloc(size_t size) {
 	// align the size
 	size = (size + 15) & ~15;
 
-	// 1 - Get the type
+	// 1 - Get the current zone
 	t_mem_zone current_zone = get_current_zone(size);
 
+	// 2 - We have the zone, so we just have to create the chunk inside it
 
-	// 2 - look for the mem_zone
-	
+	// 3 - We return the chunk
+
 }
 
 t_mem_zone	*get_current_zone(size_t size) {
@@ -33,21 +34,55 @@ t_mem_zone	*get_current_zone(size_t size) {
 
 	t_mem_zone	current_zone = NULL;
 
-	//es ce que la zone est initialiser si oui, alors je check dans la liste
 	if (current_zone_type == TINY || current_zone_type == SMALL) {
-		current_zone = get_tiny_small_zone(current_zone_type);
+		current_zone = get_tiny_small_zone(current_zone_type, size);
+	} else {
+		//Donc faut toujours ask for mem zone large
+		//sachant que pour les larges, il faut toujours add_back la zone
+
+		//
+		//so check if the zone have enough space first
+		//If we need a new mem_zone then : may set the mem_zone add back, initialize etc
+		current_zone = ask_for_mem_zone(current_zone_type, size);
 	}
+	return current_zone;
+}
 
-	//sachant que pour les larges, il faut toujours add_back la zone
+t_mem_zone	*look_for_matching_zone(t_mem_zone *zone, size_t size) {
+	t_mem_zone	*matching_zone = NULL;
 
-	//
-	//so check if the zone have enough space first
-	//If we need a new mem_zone then : may set the mem_zone add back, initialize etc
-	current_zone = ask_for_mem_zone(current_zone_type, size);
+	while (zone) {
+		if (zone->max_size_availbale <= size + sizeof(t_chunk)) {
+			matching_zone = zone;
+			break ;
+		}
+		zone = zone->next;
+	}
+	return matching_zone;
+}
+
+t_mem_zone *get_tiny_or_small_zone(t_type type, size_t size) {
+	t_mem_zone *zone = NULL;
+
+	if (type == TINY) {
+		zone = look_for_matching_zone(g_alloc_info->tiny, size);
+		if (!zone && add_zone_tiny_small(g_alloc_info->tiny, type)) {
+			zone = g_alloc_info->last_tiny;
+			g_alloc_info->nb_tiny_elems += 1;
+		}
+	} else (type == SMALL) {
+		zone = look_for_matching_zone(g_alloc_info->small, size);
+		if (!zone && add_zone_tiny_small(g_alloc_info->small, type)) {
+			zone = g_alloc_info->last_small;
+			g_alloc_info->nb_small_elems += 1;
+		};
+	}
+	return (zone);
 }
 
 bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 	bool state = false;
+	t_mem_zone *new_zone = NULL;
 
 	if (!mem_zone) {
 		mem_zone = ask_for_mem_zone(zone_type, 0);
@@ -55,11 +90,12 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			//en theorie a ce moment faut aussi cree le chunk free
 			state = true;
 			new_mem_zone(mem_zone, zone_type);
+			new_zone = mem_zone;
 		}
 	}
 	//Meaning  on est pas passer au dessus
 	if (!state && mem_zone) {
-		t_mem_zone *new_zone = ask_for_mem_zone(zone_type, 0);
+		new_zone = ask_for_mem_zone(zone_type, 0);
 		if (mem_zone) {
 			state = true;
 			while (mem_zone && mem_zone->next) {
@@ -69,7 +105,12 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			//fill les info de la struct, faire une function new_mem_zone genre
 			mem_zone->next = new_zone;
 			new_mem_zone(new_zone, zone_type);
-		}
+			}
+	}
+	if (type == TINY) {
+		g_alloc_info->last_tiny = new_zone;
+	} else {
+		g_alloc_info->last_small = new_zone;
 	}
 	return (state);
 }
@@ -93,19 +134,6 @@ t_chunk *new_chunk(void *chunk_addr, t_state state, t_type zone_type, size_t siz
 	return (new_chunk);
 }
 
-t_mem_zone *get_tiny_or_small_zone(t_type type) {
-	t_mem_zone *zone = NULL;
-
-	if (type == TINY) {
-			zone = ask_for_mem_zone(current_zone_type, 0);
-			if (zone) {
-				add_to_tiny(zone);
-			}
-		}
-	} else (type == SMALL) {
-		
-	}
-}
 
 void	*ask_for_mem_zone(t_type type, size_t size) {
 	void	*zone = NULL;

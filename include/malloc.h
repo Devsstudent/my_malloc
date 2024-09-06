@@ -36,13 +36,31 @@ typedef struct mem_zone {
 	size_t			max_size_available;
 }	t_mem_zone;
 
+typedef struct tiny {
+	t_mem_zone		*tiny;
+}	t_tiny;
+
+typedef struct small {
+	t_mem_zone		*small;
+}	t_small;
+
+typedef struct large {
+	t_mem_zone		*large;
+}	t_large;
+
 typedef struct alloc_info {
 	// < 560
 	t_mem_zone		*tiny;
+	t_mem_zone		*last_tiny;
+	size_t		nb_tiny_elems;
 	// < 4096
 	t_mem_zone		*small;
+	t_mem_zone		*last_small;
+	size_t		nb_small_elems;
 	// > 4096
 	t_mem_zone		*large;
+	t_mem_zone		*last_large;
+	size_t		nb_large_elems;
 }	t_alloc_info;
 
 extern t_alloc_info *get_info(void);
