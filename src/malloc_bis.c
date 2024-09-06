@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/06 22:30:54 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/06 23:53:44 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,10 +23,95 @@ void *ft_malloc(size_t size) {
 	// 1 - Get the current zone
 	t_mem_zone current_zone = get_current_zone(size);
 
+	if (current_zone) {
+		//Error on a crash
+		return NULL;
+	}
+
+	t_chunk *asked_chunk = get_chunk(current_zone, size);
+
+	if (!asked_chunk) {
+		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
+		return NULL;
+	}
+	return (asked_chunk + sizeof(t_chunk));
+
 	// 2 - We have the zone, so we just have to create the chunk inside it
+	//
+
+	// - Problematique : la max_size_available, c'est soit les chunks free, donc faut check au free
+	// soit c'est le dernier chunk je pense (je vais garder la logique du add_back facile)
+	// get_chunk
 
 	// 3 - We return the chunk
 
+}
+
+bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zone) {
+	bool state = false;
+	if (buff->size <= size && buff->state == FREE) {
+		split_chunk(chunk, size, current_zone);
+		state = true;
+	}
+	return (state);
+}
+
+//ici current zone just pour adapter la max size available
+void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size) {
+	bool state = false;
+	if (chunk_to_split->size == size) {
+		chunk_to_split->state = BUSY;
+//		state = true;
+	} else {
+		chunk_to_split->state = BUSY;
+		size_t size_new_chunk = chunk_to_split->size - size;
+		if (size_new_chunk - sizeof(t_chunk) > 0) {
+		//	split
+			
+			t_chunk *new_chunk = new_chunk((void *)(chunk_to_split + size), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
+			new_chunk->prev = chunk_to_split;
+			if (chunk_to_split->next) {
+				new_chunk->next = chunk_to_split->next;
+				chunk_to_split->next->prev = new_chunk;
+			}
+			chunk_to_split->next = new_chunk;
+//			state = true;
+		}
+	}
+	if (largest_chunk == chunk_to_split) {
+		current_zone->largest_chunk = find_largest_chunk(current_zone);
+		//find_another_one, or null if there is no dans le cas des larges genre
+	}
+	//return (state);
+}
+
+t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
+	t_chunk	*buff = current_zone->first;
+	t_chunk	*new_largest_chunk = NULL;
+	size_t	max = 0;
+	while (buff) {
+		if (buff->size > max && buff->state == FREE) {
+			new_largest_chunk = buff;
+			max = buff->size;
+		}
+		buff = buff->next;
+	}
+	return (new_largest_chunk);
+}
+
+t_chunk *get_chunk(t_mem_zone *current_zone, size_t size) {
+	t_chunk *matching_chunk = NULL;
+
+	t_chunk *buff = current_zone->first;
+	if (check_chunk_is_matching(buff, size, current_zone))
+		matching_chunk = buff;
+
+	while (buff && !matching_chunk) {
+		if (check_chunk_is_matching(buff, size, current_zone))
+			matching_chunk = buff;
+		buff = buff->next;
+	}
+	return (matching_chunk);
 }
 
 t_mem_zone	*get_current_zone(size_t size) {
@@ -37,22 +122,41 @@ t_mem_zone	*get_current_zone(size_t size) {
 	if (current_zone_type == TINY || current_zone_type == SMALL) {
 		current_zone = get_tiny_small_zone(current_zone_type, size);
 	} else {
-		//Donc faut toujours ask for mem zone large
-		//sachant que pour les larges, il faut toujours add_back la zone
-
-		//
-		//so check if the zone have enough space first
-		//If we need a new mem_zone then : may set the mem_zone add back, initialize etc
-		current_zone = ask_for_mem_zone(current_zone_type, size);
-	}
+		//dans le cas ou on a un block qui est free
+		current_zone = look_for_matching_zone(g_alloc_info->large, size);
+		if (!current_zone)
+		{
+			current_zone = ask_for_mem_zone(current_zone_type, size + sizeof(t_chunk));
+			current_zone->zone_type = current_zone_type;
+			current_zone->free_chunks = 1;
+			current_zone->busy_chunks = 0;
+			current_zone->next = NULL;
+			current_zone->first = new_chunk(current_zone + sizeof(t_mem_zone), FREE, current_zone_type, zone->max_size_availbale - sizeof(t_chunk));
+			current_zone->largest_chunk = current_zone->first;
+			add_large_zone(current_zone);
+		}
+	
 	return current_zone;
 }
+void	add_large_zone(t_mem_zone *zone) {
+	t_mem_zone *large_zone = g_alloc_info->large;
+	if (!large_zone) {
+		g_alloc_info->large = zone;
+	}
+	while (large_zone && large_zone->next) {
+		large_zone = large_zone->next;
+	}
+	large_zone->next = zone;
+	g_alloc_info->nb_large_elems += 1;
+}
 
+//C'est important de poser comment le sizeof(t_chunk) est pris en compte
+//J'ai decider de ne pas le deduire pour les larges dans la size_availble pour trouver des page qui match
 t_mem_zone	*look_for_matching_zone(t_mem_zone *zone, size_t size) {
 	t_mem_zone	*matching_zone = NULL;
 
 	while (zone) {
-		if (zone->max_size_availbale <= size + sizeof(t_chunk)) {
+		if (zone->largest_chunk->size <= size) {
 			matching_zone = zone;
 			break ;
 		}
@@ -101,11 +205,9 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			while (mem_zone && mem_zone->next) {
 				mem_zone = mem_zone->next;
 			}
-			//en theorie a ce moment faut aussi cree le chunk free
-			//fill les info de la struct, faire une function new_mem_zone genre
 			mem_zone->next = new_zone;
 			new_mem_zone(new_zone, zone_type);
-			}
+		}
 	}
 	if (type == TINY) {
 		g_alloc_info->last_tiny = new_zone;
@@ -120,8 +222,8 @@ void	new_mem_zone(t_mem_zone *zone, t_type type) {
 	zone->busy_chunks = 0;
 	zone->next = NULL;
 	zone->page_type = type;
-	zone->max_size_availbale = (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone);
-	zone->first = new_chunk(zone + sizeof(t_mem_zone), FREE, type, zone->max_size_availbale);
+	zone->first = new_chunk(zone + sizeof(t_mem_zone), FREE, type, (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone));
+	zone->largest_chunk = zone->first;
 }
 
 t_chunk *new_chunk(void *chunk_addr, t_state state, t_type zone_type, size_t size) {

@@ -33,20 +33,8 @@ typedef struct mem_zone {
 	struct mem_zone	*next;
 	t_chunk			*first;
 	t_type			zone_type;
-	size_t			max_size_available;
+	t_chunk			*largest_chunk;
 }	t_mem_zone;
-
-typedef struct tiny {
-	t_mem_zone		*tiny;
-}	t_tiny;
-
-typedef struct small {
-	t_mem_zone		*small;
-}	t_small;
-
-typedef struct large {
-	t_mem_zone		*large;
-}	t_large;
 
 typedef struct alloc_info {
 	// < 560
