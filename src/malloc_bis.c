@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/07 14:48:13 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/07 15:13:24 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,7 +130,7 @@ t_mem_zone	*get_current_zone(size_t size) {
 				current_zone->free_chunks = 1;
 				current_zone->busy_chunks = 0;
 				current_zone->next = NULL;
-				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone), FREE, current_zone_type, size - sizeof(t_chunk));
+				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone), FREE, current_zone_type, size);
 				current_zone->largest_chunk = current_zone->first;
 				add_large_zone(current_zone);
 			}
@@ -144,11 +144,12 @@ void	add_large_zone(t_mem_zone *zone) {
 	t_mem_zone *large_zone = g_alloc_info.large;
 	if (!large_zone) {
 		g_alloc_info.large = zone;
+	} else {
+		while (large_zone && large_zone->next) {
+			large_zone = large_zone->next;
+		}
+		large_zone->next = zone;
 	}
-	while (large_zone && large_zone->next) {
-		large_zone = large_zone->next;
-	}
-	large_zone->next = zone;
 	g_alloc_info.nb_large_elems += 1;
 }
 

@@ -38,7 +38,7 @@ obj_rep:
 
 clean: 
 	rm -f *.o
-	rm -f tests/*.o
+	rm -f tests/*
 	rm -f obj/*.o
 	make fclean -s -C lib/libft
 
