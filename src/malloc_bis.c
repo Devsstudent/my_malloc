@@ -12,16 +12,14 @@
 
 #include "malloc.h"
 
-t_type	get_zone_type(size_t size);
-
-t_alloc_info g_alloc_info = 0;
+t_alloc_info g_alloc_info;
 
 void *ft_malloc(size_t size) {
 	// align the size
 	size = (size + 15) & ~15;
 
 	// 1 - Get the current zone
-	t_mem_zone current_zone = get_current_zone(size);
+	t_mem_zone *current_zone = get_current_zone(size);
 
 	if (current_zone) {
 		//Error on a crash
@@ -49,8 +47,8 @@ void *ft_malloc(size_t size) {
 
 bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zone) {
 	bool state = false;
-	if (buff->size <= size && buff->state == FREE) {
-		split_chunk(chunk, size, current_zone);
+	if (chunk->size <= size && chunk->state == FREE) {
+		split_chunk(chunk, current_zone, size);
 		state = true;
 	}
 	return (state);
@@ -58,7 +56,7 @@ bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zo
 
 //ici current zone just pour adapter la max size available
 void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size) {
-	bool state = false;
+//	bool state = false;
 	if (chunk_to_split->size == size) {
 		chunk_to_split->state = BUSY;
 //		state = true;
@@ -68,17 +66,17 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 		if (size_new_chunk - sizeof(t_chunk) > 0) {
 		//	split
 			
-			t_chunk *new_chunk = new_chunk((void *)(chunk_to_split + size), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
-			new_chunk->prev = chunk_to_split;
+			t_chunk *new = new_chunk((void *)(chunk_to_split + size), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
+			new->prev = chunk_to_split;
 			if (chunk_to_split->next) {
-				new_chunk->next = chunk_to_split->next;
-				chunk_to_split->next->prev = new_chunk;
+				new->next = chunk_to_split->next;
+				chunk_to_split->next->prev = new;
 			}
-			chunk_to_split->next = new_chunk;
+			chunk_to_split->next = new;
 //			state = true;
 		}
 	}
-	if (largest_chunk == chunk_to_split) {
+	if (current_zone->largest_chunk == chunk_to_split) {
 		current_zone->largest_chunk = find_largest_chunk(current_zone);
 		//find_another_one, or null if there is no dans le cas des larges genre
 	}
@@ -117,37 +115,41 @@ t_chunk *get_chunk(t_mem_zone *current_zone, size_t size) {
 t_mem_zone	*get_current_zone(size_t size) {
 	t_type current_zone_type = get_zone_type(size);
 
-	t_mem_zone	current_zone = NULL;
+	t_mem_zone	*current_zone = NULL;
 
 	if (current_zone_type == TINY || current_zone_type == SMALL) {
-		current_zone = get_tiny_small_zone(current_zone_type, size);
+		current_zone = get_tiny_or_small_zone(current_zone_type, size);
 	} else {
 		//dans le cas ou on a un block qui est free
-		current_zone = look_for_matching_zone(g_alloc_info->large, size);
+		current_zone = look_for_matching_zone(g_alloc_info.large, size);
 		if (!current_zone)
 		{
 			current_zone = ask_for_mem_zone(current_zone_type, size + sizeof(t_chunk));
-			current_zone->zone_type = current_zone_type;
-			current_zone->free_chunks = 1;
-			current_zone->busy_chunks = 0;
-			current_zone->next = NULL;
-			current_zone->first = new_chunk(current_zone + sizeof(t_mem_zone), FREE, current_zone_type, zone->max_size_availbale - sizeof(t_chunk));
-			current_zone->largest_chunk = current_zone->first;
-			add_large_zone(current_zone);
+			if (current_zone) {
+				current_zone->zone_type = current_zone_type;
+				current_zone->free_chunks = 1;
+				current_zone->busy_chunks = 0;
+				current_zone->next = NULL;
+				current_zone->first = new_chunk(current_zone + sizeof(t_mem_zone), FREE, current_zone_type, size - sizeof(t_chunk));
+				current_zone->largest_chunk = current_zone->first;
+				add_large_zone(current_zone);
+			}
 		}
-	
+	}
+
 	return current_zone;
 }
+
 void	add_large_zone(t_mem_zone *zone) {
-	t_mem_zone *large_zone = g_alloc_info->large;
+	t_mem_zone *large_zone = g_alloc_info.large;
 	if (!large_zone) {
-		g_alloc_info->large = zone;
+		g_alloc_info.large = zone;
 	}
 	while (large_zone && large_zone->next) {
 		large_zone = large_zone->next;
 	}
 	large_zone->next = zone;
-	g_alloc_info->nb_large_elems += 1;
+	g_alloc_info.nb_large_elems += 1;
 }
 
 //C'est important de poser comment le sizeof(t_chunk) est pris en compte
@@ -169,16 +171,16 @@ t_mem_zone *get_tiny_or_small_zone(t_type type, size_t size) {
 	t_mem_zone *zone = NULL;
 
 	if (type == TINY) {
-		zone = look_for_matching_zone(g_alloc_info->tiny, size);
-		if (!zone && add_zone_tiny_small(g_alloc_info->tiny, type)) {
-			zone = g_alloc_info->last_tiny;
-			g_alloc_info->nb_tiny_elems += 1;
+		zone = look_for_matching_zone(g_alloc_info.tiny, size);
+		if (!zone && add_zone_tiny_small(g_alloc_info.tiny, type)) {
+			zone = g_alloc_info.last_tiny;
+			g_alloc_info.nb_tiny_elems += 1;
 		}
-	} else (type == SMALL) {
-		zone = look_for_matching_zone(g_alloc_info->small, size);
-		if (!zone && add_zone_tiny_small(g_alloc_info->small, type)) {
-			zone = g_alloc_info->last_small;
-			g_alloc_info->nb_small_elems += 1;
+	} else {
+		zone = look_for_matching_zone(g_alloc_info.small, size);
+		if (!zone && add_zone_tiny_small(g_alloc_info.small, type)) {
+			zone = g_alloc_info.last_small;
+			g_alloc_info.nb_small_elems += 1;
 		};
 	}
 	return (zone);
@@ -209,10 +211,10 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			new_mem_zone(new_zone, zone_type);
 		}
 	}
-	if (type == TINY) {
-		g_alloc_info->last_tiny = new_zone;
+	if (zone_type == TINY) {
+		g_alloc_info.last_tiny = new_zone;
 	} else {
-		g_alloc_info->last_small = new_zone;
+		g_alloc_info.last_small = new_zone;
 	}
 	return (state);
 }
@@ -221,7 +223,7 @@ void	new_mem_zone(t_mem_zone *zone, t_type type) {
 	zone->free_chunks = 1;
 	zone->busy_chunks = 0;
 	zone->next = NULL;
-	zone->page_type = type;
+	zone->zone_type = type;
 	zone->first = new_chunk(zone + sizeof(t_mem_zone), FREE, type, (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone));
 	zone->largest_chunk = zone->first;
 }
@@ -240,11 +242,11 @@ t_chunk *new_chunk(void *chunk_addr, t_state state, t_type zone_type, size_t siz
 void	*ask_for_mem_zone(t_type type, size_t size) {
 	void	*zone = NULL;
 	if (type == TINY) {
-		zone = mmap(g_alloc_info->tiny, TINY_ZONE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+		zone = mmap(g_alloc_info.tiny, TINY_ZONE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	} else if (type == SMALL) {
-		zone = mmap(g_alloc_info->small, SMALL_ZONE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+		zone = mmap(g_alloc_info.small, SMALL_ZONE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	} else {
-		zone = mmap(g_alloc_info->large, size + sizeof(t_mem_zone),PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+		zone = mmap(g_alloc_info.large, size + sizeof(t_mem_zone),PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	}
 	return (zone);
 }

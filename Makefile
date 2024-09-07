@@ -7,7 +7,7 @@ NAME = libft_malloc_$(HOSTTYPE).so
 LIB = -L ./lib/libft/ -lft
 HEADER = -I ./include -I ./lib/libft
 FLAG = -Wall  -Wextra -g -MMD
-OBJ = $(addsuffix .o, $(addprefix obj/, malloc))
+OBJ = $(addsuffix .o, $(addprefix obj/, malloc_bis))
 CC = gcc
 
 dynamic: FLAG += -D DYNAMIC=1
@@ -25,7 +25,7 @@ $(NAME): $(OBJ)
 
 $(OBJ): obj_rep
 	make bonus -s -C lib/libft
-	$(CC) $(HEADER) $(FLAG) -fPIC -I ./include -g3 -c src/malloc.c -o obj/malloc.o
+	$(CC) $(HEADER) $(FLAG) -fPIC -I ./include -g3 -c src/malloc_bis.c -o obj/malloc_bis.o
 
 test: $(NAME)
 	$(CC) $(HEADER) -Wall -Werror -Wextra  -I ./lib/unity/ -I ./ -g3 -c tests/test.c -o tests/test.o
