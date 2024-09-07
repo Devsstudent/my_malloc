@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/06 23:53:44 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/07 14:48:13 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ void *ft_malloc(size_t size) {
 	// 1 - Get the current zone
 	t_mem_zone *current_zone = get_current_zone(size);
 
-	if (current_zone) {
+	if (!current_zone) {
 		//Error on a crash
 		return NULL;
 	}
@@ -32,7 +32,7 @@ void *ft_malloc(size_t size) {
 		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
 		return NULL;
 	}
-	return (asked_chunk + sizeof(t_chunk));
+	return ((void *)(asked_chunk) + sizeof(t_chunk));
 
 	// 2 - We have the zone, so we just have to create the chunk inside it
 	//
@@ -47,7 +47,7 @@ void *ft_malloc(size_t size) {
 
 bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zone) {
 	bool state = false;
-	if (chunk->size <= size && chunk->state == FREE) {
+	if (chunk->size >= size && chunk->state == FREE) {
 		split_chunk(chunk, current_zone, size);
 		state = true;
 	}
@@ -130,7 +130,7 @@ t_mem_zone	*get_current_zone(size_t size) {
 				current_zone->free_chunks = 1;
 				current_zone->busy_chunks = 0;
 				current_zone->next = NULL;
-				current_zone->first = new_chunk(current_zone + sizeof(t_mem_zone), FREE, current_zone_type, size - sizeof(t_chunk));
+				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone), FREE, current_zone_type, size - sizeof(t_chunk));
 				current_zone->largest_chunk = current_zone->first;
 				add_large_zone(current_zone);
 			}
@@ -197,6 +197,10 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			state = true;
 			new_mem_zone(mem_zone, zone_type);
 			new_zone = mem_zone;
+			if (zone_type == TINY)
+				g_alloc_info.tiny = new_zone;
+			else
+				g_alloc_info.small = new_zone;
 		}
 	}
 	//Meaning  on est pas passer au dessus
@@ -224,7 +228,7 @@ void	new_mem_zone(t_mem_zone *zone, t_type type) {
 	zone->busy_chunks = 0;
 	zone->next = NULL;
 	zone->zone_type = type;
-	zone->first = new_chunk(zone + sizeof(t_mem_zone), FREE, type, (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone));
+	zone->first = new_chunk((void *)(zone) + sizeof(t_mem_zone), FREE, type, (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone));
 	zone->largest_chunk = zone->first;
 }
 

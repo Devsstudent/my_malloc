@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/06/23 21:58:41 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/07 13:52:48 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,19 @@
 void setUp() {}
 void tearDown() {}
 
+void basic_one_allocation() {
+	printf("Basic one allocation test\n");
+	char *ptr = ft_malloc(151);
+	TEST_ASSERT_TRUE(ptr != NULL);
+	int i = 0;
+	while (i < 150) {
+		ptr[i] = 'a';
+		i++;
+	}
+	ptr[i] = 0;
+	printf("%s\n", ptr);
+}
+/*
 void OneAllocationByPageTest() {
 	t_alloc_info *alloc_info = get_info();
 
@@ -83,13 +96,11 @@ void TwoAlloctionTiny() {
 	void *ptr = ft_malloc(12);
 	TEST_ASSERT_TRUE(ptr != NULL);
 	busy_chunks += 1;
-/*
 	if (free_chunks > 0) {
 		free_chunks -= 1;
 	} else {
 		free_chunks += 1;
 	}
-*/
 	t_chunk *c = (t_chunk *)(ptr - sizeof(t_chunk));
 	TEST_ASSERT_TRUE(alloc_info->tiny.busy_chunks == busy_chunks);
 	TEST_ASSERT_TRUE(alloc_info->tiny.chunks == c);
@@ -286,16 +297,18 @@ void MultipleAllocationLoopMix() {
         }
     }
 }
-
+*/
 
 //Pour le mix on va tester sur un char ** avec des strings bien fat puis des toute petite etc
 
 int main() {
    UNITY_BEGIN();
 
+   RUN_TEST(basic_one_allocation);
+
+/*
    printf("\n\n FREE TEST \n\n");
    RUN_TEST(FreeTest);
-
    printf("\n\n ONE ALLOCATOIN BY PAGE TEST \n\n");
    RUN_TEST(OneAllocationByPageTest);
 
@@ -312,5 +325,6 @@ int main() {
    printf("\n\n MULTIPLE ALLOCATION LOOP MIX \n\n");
    RUN_TEST(MultipleAllocationLoopMix);
 	show_alloc_mem();
+	*/
    UNITY_END();
 }
