@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/07 15:13:24 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/07 15:28:06 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,7 +159,7 @@ t_mem_zone	*look_for_matching_zone(t_mem_zone *zone, size_t size) {
 	t_mem_zone	*matching_zone = NULL;
 
 	while (zone) {
-		if (zone->largest_chunk->size <= size) {
+		if (zone->largest_chunk && zone->largest_chunk->size <= size) {
 			matching_zone = zone;
 			break ;
 		}

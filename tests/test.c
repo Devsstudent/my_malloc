@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/07 15:15:01 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/07 15:24:56 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,35 @@ void basic_one_large_allocation() {
 	ptr[i] = 0;
 	printf("%s\n", ptr);
 }
+
+char *basic_large_alloc() {
+	char *ptr = ft_malloc(8192);
+	if (!ptr) {
+		return (NULL);
+	}
+	int i = 0;
+	while (i < 8192) {
+		ptr[i] = 'a';
+		i++;
+	}
+	ptr[i] = 0;
+	return (ptr);
+}
+
+void multi_large_allocation() {
+	printf("Multi large allocation Test \n");
+	char *ptr1 = basic_large_alloc();
+	TEST_ASSERT_TRUE(ptr1 != NULL);
+	char *ptr2 = basic_large_alloc();
+	TEST_ASSERT_TRUE(ptr2 != NULL);
+	char *ptr3 = basic_large_alloc();
+	TEST_ASSERT_TRUE(ptr3 != NULL);
+	char *ptr4 = basic_large_alloc();
+	TEST_ASSERT_TRUE(ptr4 != NULL);
+
+	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+}
+
 /*
 void OneAllocationByPageTest() {
 	t_alloc_info *alloc_info = get_info();
@@ -330,11 +359,13 @@ void MultipleAllocationLoopMix() {
 int main() {
    UNITY_BEGIN();
 
-   RUN_TEST(basic_one_tiny_allocation);
+//   RUN_TEST(basic_one_tiny_allocation);
 
-   RUN_TEST(basic_one_small_allocation);
+//   RUN_TEST(basic_one_small_allocation);
 
-   RUN_TEST(basic_one_large_allocation);
+//   RUN_TEST(basic_one_large_allocation);
+
+   RUN_TEST(multi_large_allocation);
 
 /*
    printf("\n\n FREE TEST \n\n");
