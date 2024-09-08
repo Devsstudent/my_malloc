@@ -39,8 +39,41 @@ void test_small_alloc_2_mem_zone()
         matrix[i][cols] = '\0'; // Null-terminate each string
     }
 	t_alloc_info info = get_alloc_info();
-	printf("%lu\n", info.nb_small_elems);
 	TEST_ASSERT_TRUE(info.nb_small_elems == 2);
+    // Free dynamically allocated memory
+    //for (int i = 0; i < rows; i++) {
+     //   ft_free(matrix[i]);
+  //  }
+   // ft_free(matrix);
+	//printf("%li\n", alloc_info->large.busy_chunks);
+	//TEST_ASSERT_TRUE(alloc_info->small.busy_chunks == 0);
+}
+
+
+void test_tiny_alloc_2_mem_zone()
+{
+	int rows = 104;
+	int cols = 530;
+
+    // Dynamically allocate memory for a 2D array of characters
+	//t_alloc_info *alloc_info = get_info();
+    char **matrix = (char **)ft_malloc(rows * sizeof(char *));
+	TEST_ASSERT_TRUE(matrix != NULL);
+
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (char *)ft_malloc((cols + 1) * sizeof(char)); // +1 for null terminator
+		TEST_ASSERT_TRUE(matrix[i] != NULL);
+    }
+    // Fill the 2D array with sample data
+    char fillChar = 'A';
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = fillChar++;
+        }
+        matrix[i][cols] = '\0'; // Null-terminate each string
+    }
+	t_alloc_info info = get_alloc_info();
+	TEST_ASSERT_TRUE(info.nb_tiny_elems == 2);
     // Free dynamically allocated memory
     //for (int i = 0; i < rows; i++) {
      //   ft_free(matrix[i]);
@@ -142,6 +175,8 @@ void multi_large_allocation() {
 	char *ptr4 = basic_large_alloc();
 	TEST_ASSERT_TRUE(ptr4 != NULL);
 
+	t_alloc_info info = get_alloc_info();
+	TEST_ASSERT_TRUE(info.nb_large_elems == 4);
 	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 }
 
@@ -447,18 +482,21 @@ void MultipleAllocationLoopMix() {
 int main() {
    UNITY_BEGIN();
 
+   RUN_TEST(multi_large_allocation);
+
    RUN_TEST(test_small_alloc_2_mem_zone);
 
-//   RUN_TEST(basic_one_tiny_allocation);
+   RUN_TEST(test_tiny_alloc_2_mem_zone);
 
- //  RUN_TEST(basic_one_small_allocation);
+   RUN_TEST(basic_one_tiny_allocation);
 
-//   RUN_TEST(basic_one_large_allocation);
+   RUN_TEST(basic_one_small_allocation);
 
-//   RUN_TEST(multi_large_allocation);
+   RUN_TEST(basic_one_large_allocation);
 
- //  RUN_TEST(multi_tiny_allocation);
-//     RUN_TEST(multi_small_allocation);
+
+   RUN_TEST(multi_tiny_allocation);
+   RUN_TEST(multi_small_allocation);
 /*
    printf("\n\n FREE TEST \n\n");
    RUN_TEST(FreeTest);
