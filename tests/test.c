@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/07 15:24:56 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/08 20:07:57 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,40 @@
 
 void setUp() {}
 void tearDown() {}
+
+void test_small_alloc_2_mem_zone()
+{
+	int rows = 101;
+	int cols = 4050;
+
+    // Dynamically allocate memory for a 2D array of characters
+	//t_alloc_info *alloc_info = get_info();
+    char **matrix = (char **)ft_malloc(rows * sizeof(char *));
+	TEST_ASSERT_TRUE(matrix != NULL);
+
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (char *)ft_malloc((cols + 1) * sizeof(char)); // +1 for null terminator
+		TEST_ASSERT_TRUE(matrix[i] != NULL);
+    }
+    // Fill the 2D array with sample data
+    char fillChar = 'A';
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = fillChar++;
+        }
+        matrix[i][cols] = '\0'; // Null-terminate each string
+    }
+	t_alloc_info info = get_alloc_info();
+	printf("%lu\n", info.nb_small_elems);
+	TEST_ASSERT_TRUE(info.nb_small_elems == 2);
+    // Free dynamically allocated memory
+    //for (int i = 0; i < rows; i++) {
+     //   ft_free(matrix[i]);
+  //  }
+   // ft_free(matrix);
+	//printf("%li\n", alloc_info->large.busy_chunks);
+	//TEST_ASSERT_TRUE(alloc_info->small.busy_chunks == 0);
+}
 
 void basic_one_tiny_allocation() {
 	printf("Basic one tiny allocation test\n");
@@ -69,6 +103,34 @@ char *basic_large_alloc() {
 	return (ptr);
 }
 
+char *basic_tiny_alloc() {
+	char *ptr = ft_malloc(500 + 1);
+	if (!ptr) {
+		return (NULL);
+	}
+	int i = 0;
+	while (i < 500) {
+		ptr[i] = 'a';
+		i++;
+	}
+	ptr[i] = 0;
+	return (ptr);
+}
+
+char *basic_small_alloc() {
+	char *ptr = ft_malloc(4000 + 1);
+	if (!ptr) {
+		return (NULL);
+	}
+	int i = 0;
+	while (i < 4000) {
+		ptr[i] = 'a';
+		i++;
+	}
+	ptr[i] = 0;
+	return (ptr);
+}
+
 void multi_large_allocation() {
 	printf("Multi large allocation Test \n");
 	char *ptr1 = basic_large_alloc();
@@ -80,6 +142,32 @@ void multi_large_allocation() {
 	char *ptr4 = basic_large_alloc();
 	TEST_ASSERT_TRUE(ptr4 != NULL);
 
+	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+}
+
+void multi_tiny_allocation() {
+	printf("Multi tiny allocation Test\n");
+	char *ptr1 = basic_tiny_alloc();
+	TEST_ASSERT_TRUE(ptr1 != NULL);
+	char *ptr2 = basic_tiny_alloc();
+	TEST_ASSERT_TRUE(ptr2 != NULL);
+	char *ptr3 = basic_tiny_alloc();
+	TEST_ASSERT_TRUE(ptr3 != NULL);
+	char *ptr4 = basic_tiny_alloc();
+	TEST_ASSERT_TRUE(ptr4 != NULL);
+	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+}
+
+void multi_small_allocation() {
+	printf("Multi small allocation Test\n");
+	char *ptr1 = basic_small_alloc();
+	TEST_ASSERT_TRUE(ptr1 != NULL);
+	char *ptr2 = basic_small_alloc();
+	TEST_ASSERT_TRUE(ptr2 != NULL);
+	char *ptr3 = basic_small_alloc();
+	TEST_ASSERT_TRUE(ptr3 != NULL);
+	char *ptr4 = basic_small_alloc();
+	TEST_ASSERT_TRUE(ptr4 != NULL);
 	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 }
 
@@ -359,14 +447,18 @@ void MultipleAllocationLoopMix() {
 int main() {
    UNITY_BEGIN();
 
+   RUN_TEST(test_small_alloc_2_mem_zone);
+
 //   RUN_TEST(basic_one_tiny_allocation);
 
-//   RUN_TEST(basic_one_small_allocation);
+ //  RUN_TEST(basic_one_small_allocation);
 
 //   RUN_TEST(basic_one_large_allocation);
 
-   RUN_TEST(multi_large_allocation);
+//   RUN_TEST(multi_large_allocation);
 
+ //  RUN_TEST(multi_tiny_allocation);
+//     RUN_TEST(multi_small_allocation);
 /*
    printf("\n\n FREE TEST \n\n");
    RUN_TEST(FreeTest);

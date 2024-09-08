@@ -6,13 +6,17 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/07 15:28:06 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/08 19:59:40 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "malloc.h"
 
 t_alloc_info g_alloc_info;
+
+t_alloc_info get_alloc_info() {
+	return g_alloc_info;
+}
 
 void *ft_malloc(size_t size) {
 	// align the size
@@ -59,6 +63,8 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 //	bool state = false;
 	if (chunk_to_split->size == size) {
 		chunk_to_split->state = BUSY;
+		current_zone->busy_chunks += 1;
+		current_zone->free_chunks -= 1;
 //		state = true;
 	} else {
 		chunk_to_split->state = BUSY;
@@ -66,7 +72,7 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 		if (size_new_chunk - sizeof(t_chunk) > 0) {
 		//	split
 			
-			t_chunk *new = new_chunk((void *)(chunk_to_split + size), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
+			t_chunk *new = new_chunk((void *)(chunk_to_split) + size + sizeof(t_chunk), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
 			new->prev = chunk_to_split;
 			if (chunk_to_split->next) {
 				new->next = chunk_to_split->next;
@@ -74,7 +80,11 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 			}
 			chunk_to_split->next = new;
 //			state = true;
+			current_zone->busy_chunks += 1;
+		} else {
+			current_zone->free_chunks -= 1;
 		}
+		chunk_to_split->size = size;
 	}
 	if (current_zone->largest_chunk == chunk_to_split) {
 		current_zone->largest_chunk = find_largest_chunk(current_zone);
@@ -94,6 +104,7 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
 		}
 		buff = buff->next;
 	}
+	printf("MAX %lu\n", max);
 	return (new_largest_chunk);
 }
 
@@ -158,12 +169,14 @@ void	add_large_zone(t_mem_zone *zone) {
 t_mem_zone	*look_for_matching_zone(t_mem_zone *zone, size_t size) {
 	t_mem_zone	*matching_zone = NULL;
 
-	while (zone) {
-		if (zone->largest_chunk && zone->largest_chunk->size <= size) {
-			matching_zone = zone;
+	t_mem_zone	*buff = zone;
+
+	while (buff) {
+		if (buff->largest_chunk && buff->largest_chunk->size >= size) {
+			matching_zone = buff;
 			break ;
 		}
-		zone = zone->next;
+		buff = buff->next;
 	}
 	return matching_zone;
 }
