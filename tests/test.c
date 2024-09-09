@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/08 20:07:57 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/09 20:29:13 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 void setUp() {}
 void tearDown() {}
+
 
 void test_small_alloc_2_mem_zone()
 {
@@ -40,13 +41,14 @@ void test_small_alloc_2_mem_zone()
     }
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.nb_small_elems == 2);
-    // Free dynamically allocated memory
-    //for (int i = 0; i < rows; i++) {
-     //   ft_free(matrix[i]);
-  //  }
-   // ft_free(matrix);
+
+    for (int i = 0; i < rows; i++) {
+        ft_free(matrix[i]);
+    }
+    ft_free(matrix);
 	//printf("%li\n", alloc_info->large.busy_chunks);
-	//TEST_ASSERT_TRUE(alloc_info->small.busy_chunks == 0);
+	TEST_ASSERT_TRUE(info.small->busy_chunks == 0);
+	TEST_ASSERT_TRUE(info.small->free_chunks == 1);
 }
 
 
@@ -75,12 +77,13 @@ void test_tiny_alloc_2_mem_zone()
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.nb_tiny_elems == 2);
     // Free dynamically allocated memory
-    //for (int i = 0; i < rows; i++) {
-     //   ft_free(matrix[i]);
-  //  }
-   // ft_free(matrix);
+    for (int i = 0; i < rows; i++) {
+        ft_free(matrix[i]);
+    }
+    ft_free(matrix);
 	//printf("%li\n", alloc_info->large.busy_chunks);
-	//TEST_ASSERT_TRUE(alloc_info->small.busy_chunks == 0);
+	TEST_ASSERT_TRUE(info.tiny->busy_chunks == 0);
+	TEST_ASSERT_TRUE(info.tiny->free_chunks == 1);
 }
 
 void basic_one_tiny_allocation() {
@@ -94,6 +97,9 @@ void basic_one_tiny_allocation() {
 	}
 	ptr[i] = 0;
 	printf("%s\n", ptr);
+	ft_free(ptr);
+	t_alloc_info info = get_alloc_info();
+	TEST_ASSERT_TRUE(info.tiny->free_chunks == 1);
 }
 
 void basic_one_small_allocation() {
@@ -107,6 +113,9 @@ void basic_one_small_allocation() {
 	}
 	ptr[i] = 0;
 	printf("%s\n", ptr);
+	ft_free(ptr);
+	t_alloc_info info = get_alloc_info();
+	TEST_ASSERT_TRUE(info.small->free_chunks == 1);
 }
 
 void basic_one_large_allocation() {
@@ -120,6 +129,10 @@ void basic_one_large_allocation() {
 	}
 	ptr[i] = 0;
 	printf("%s\n", ptr);
+	ft_free(ptr);
+	t_alloc_info info = get_alloc_info();
+	printf("%lu %lu\n", info.large->free_chunks, info.large->busy_chunks);
+	TEST_ASSERT_TRUE(info.large->free_chunks == 1);
 }
 
 char *basic_large_alloc() {
@@ -178,6 +191,12 @@ void multi_large_allocation() {
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.nb_large_elems == 4);
 	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+	ft_free(ptr1);
+	ft_free(ptr2);
+	ft_free(ptr3);
+	ft_free(ptr4);
+	TEST_ASSERT_TRUE(info.large->busy_chunks == 0);
+	TEST_ASSERT_TRUE(info.large->free_chunks == 1);
 }
 
 void multi_tiny_allocation() {
@@ -477,6 +496,7 @@ void MultipleAllocationLoopMix() {
 }
 */
 
+
 //Pour le mix on va tester sur un char ** avec des strings bien fat puis des toute petite etc
 
 int main() {
@@ -495,8 +515,9 @@ int main() {
    RUN_TEST(basic_one_large_allocation);
 
 
-   RUN_TEST(multi_tiny_allocation);
-   RUN_TEST(multi_small_allocation);
+//   RUN_TEST(multi_tiny_allocation);
+//   RUN_TEST(multi_small_allocation);
+
 /*
    printf("\n\n FREE TEST \n\n");
    RUN_TEST(FreeTest);

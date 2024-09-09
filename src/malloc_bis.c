@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/08 19:59:40 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/09 20:37:37 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,6 +143,7 @@ t_mem_zone	*get_current_zone(size_t size) {
 				current_zone->next = NULL;
 				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone), FREE, current_zone_type, size);
 				current_zone->largest_chunk = current_zone->first;
+				current_zone->size = size;
 				add_large_zone(current_zone);
 			}
 		}
@@ -155,11 +156,13 @@ void	add_large_zone(t_mem_zone *zone) {
 	t_mem_zone *large_zone = g_alloc_info.large;
 	if (!large_zone) {
 		g_alloc_info.large = zone;
+		g_alloc_info.last_large = zone;
 	} else {
 		while (large_zone && large_zone->next) {
 			large_zone = large_zone->next;
 		}
 		large_zone->next = zone;
+		g_alloc_info.last_large = zone;
 	}
 	g_alloc_info.nb_large_elems += 1;
 }
@@ -231,8 +234,10 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 	}
 	if (zone_type == TINY) {
 		g_alloc_info.last_tiny = new_zone;
+		new_zone->size = TINY_ZONE_SIZE - sizeof(t_mem_zone);
 	} else {
 		g_alloc_info.last_small = new_zone;
+		new_zone->size = SMALL_ZONE_SIZE - sizeof(t_mem_zone);
 	}
 	return (state);
 }
@@ -278,3 +283,105 @@ t_type	get_zone_type(size_t size) {
 	}
 	return (matching_type);
 }
+
+//get_chunk(t_mem_zone *mem_zone, void *addr ici addr - sizeof(t_chunk) est l'address a match)
+//
+bool	get_ptr_chunk(void *ptr, t_mem_zone *ptr_mem_zone, t_chunk **ptr_chunk) {
+	t_chunk *buff = ptr_mem_zone->first;
+	while (buff) {
+		if (buff == ptr) {
+			*ptr_chunk = buff;
+			return (true);
+		}
+		buff = buff->next;
+	}
+	return (false);
+}
+
+
+bool	loop_on_zone(void *ptr, t_mem_zone **finded_zone, t_mem_zone *zone) {
+	while (zone) {
+		if (ptr >= (void *)zone->first && ptr <= ((void *)(zone->first) + zone->size)) {
+			*finded_zone = zone;
+			return (true);
+		}
+		zone = zone->next;
+	}
+	return (false);
+}
+
+bool	get_ptr_zone(void *ptr, t_mem_zone **finded_zone) {
+	if (!loop_on_zone(ptr, finded_zone, g_alloc_info.tiny)
+		&& !loop_on_zone(ptr, finded_zone, g_alloc_info.small)
+		&& !loop_on_zone(ptr, finded_zone, g_alloc_info.large))
+	{
+		return (false);
+	}
+	return (true);
+}
+
+void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
+	t_chunk	*new_chunk = NULL;
+	t_chunk *chunk_freed = *ptr_chunk;
+	if (chunk_freed->prev && chunk_freed->prev->state == FREE) {
+		new_chunk = chunk_freed->prev;
+		new_chunk->size += chunk_freed->size + sizeof(t_chunk);
+		ptr_mem_zone->free_chunks -= 1;
+		new_chunk->next = chunk_freed->next;
+		chunk_freed->next->prev = new_chunk;
+	}
+	if (chunk_freed->next && chunk_freed->next->state == FREE) {
+		if (!new_chunk) {
+			new_chunk = chunk_freed;
+		}
+		new_chunk->size += chunk_freed->next->size + sizeof(t_chunk);
+		ptr_mem_zone->free_chunks -= 1;
+		t_chunk *next = chunk_freed->next;
+		if (next && next->next) {
+			new_chunk->next = next->next;
+			next->next->prev = new_chunk;
+		}
+	}
+	if (new_chunk) {
+		*ptr_chunk = new_chunk;
+	}
+	//Maybe set memory to 0
+}
+
+void ft_free(void *ptr) {
+	t_mem_zone	*ptr_mem_zone = NULL;
+	t_chunk		*ptr_chunk = NULL;
+
+	//Check la memzone
+	if (!get_ptr_zone(ptr, &ptr_mem_zone)) {
+		//Error
+		printf("Error getting ptr_zone\n");
+		return ;
+	}
+	//Get le ptr
+	if (!get_ptr_chunk(ptr - sizeof(t_chunk), ptr_mem_zone, &ptr_chunk)) {
+		//Error
+		printf("Error getting ptr_chunk\n");
+		return ;
+	}
+	if (ptr_chunk->state != BUSY) {
+		//ERROR
+		printf("Error double free\n");
+		return ;
+	}
+
+	ptr_chunk->state = FREE;
+	ptr_mem_zone->free_chunks += 1;
+	ptr_mem_zone->busy_chunks -= 1;
+
+
+	merge_chunk(&ptr_chunk, ptr_mem_zone);
+	//Now if the next or the prev is free, then we construct a big chunk
+	
+
+	if (ptr_mem_zone->largest_chunk && ptr_chunk->size > ptr_mem_zone->largest_chunk->size) {
+		ptr_mem_zone->largest_chunk = ptr_chunk;
+	}
+}
+
+
