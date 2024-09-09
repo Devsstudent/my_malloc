@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/09 20:37:37 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/09 20:44:23 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -327,8 +327,9 @@ void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 		new_chunk = chunk_freed->prev;
 		new_chunk->size += chunk_freed->size + sizeof(t_chunk);
 		ptr_mem_zone->free_chunks -= 1;
-		new_chunk->next = chunk_freed->next;
-		chunk_freed->next->prev = new_chunk;
+		t_chunk *next = chunk_freed->next;
+		new_chunk->next = next;
+		next->prev = new_chunk;
 	}
 	if (chunk_freed->next && chunk_freed->next->state == FREE) {
 		if (!new_chunk) {
@@ -384,4 +385,22 @@ void ft_free(void *ptr) {
 	}
 }
 
+#ifdef DYNAMIC
 
+//#warning "DYNAMIC is defined"
+void    *malloc(size_t size)
+{
+    ft_putstr_fd("malloc\n", STDOUT_FILENO);
+    void *ptr = ft_malloc(size);
+	//show_alloc_mem();
+	//ft_printf("%p returned\n", ptr);
+	return (ptr);
+}
+
+void    free(void *ptr)
+{
+    ft_putstr_fd("free\n", STDOUT_FILENO);
+    ft_free(ptr);
+}
+
+#endif
