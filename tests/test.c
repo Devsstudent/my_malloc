@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/09 20:29:13 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/11 18:42:09 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,7 @@ void basic_one_tiny_allocation() {
 		i++;
 	}
 	ptr[i] = 0;
-	printf("%s\n", ptr);
+	//printf("%s\n", ptr);
 	ft_free(ptr);
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.tiny->free_chunks == 1);
@@ -112,9 +112,10 @@ void basic_one_small_allocation() {
 		i++;
 	}
 	ptr[i] = 0;
-	printf("%s\n", ptr);
+	//printf("%s\n", ptr);
 	ft_free(ptr);
 	t_alloc_info info = get_alloc_info();
+	printf("%lu\n", info.small->free_chunks);
 	TEST_ASSERT_TRUE(info.small->free_chunks == 1);
 }
 
@@ -128,7 +129,7 @@ void basic_one_large_allocation() {
 		i++;
 	}
 	ptr[i] = 0;
-	printf("%s\n", ptr);
+	////printf("%s\n", ptr);
 	ft_free(ptr);
 	t_alloc_info info = get_alloc_info();
 	printf("%lu %lu\n", info.large->free_chunks, info.large->busy_chunks);
@@ -190,7 +191,7 @@ void multi_large_allocation() {
 
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.nb_large_elems == 4);
-	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+	//printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 	ft_free(ptr1);
 	ft_free(ptr2);
 	ft_free(ptr3);
@@ -209,7 +210,7 @@ void multi_tiny_allocation() {
 	TEST_ASSERT_TRUE(ptr3 != NULL);
 	char *ptr4 = basic_tiny_alloc();
 	TEST_ASSERT_TRUE(ptr4 != NULL);
-	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+	//printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 }
 
 void multi_small_allocation() {
@@ -222,7 +223,7 @@ void multi_small_allocation() {
 	TEST_ASSERT_TRUE(ptr3 != NULL);
 	char *ptr4 = basic_small_alloc();
 	TEST_ASSERT_TRUE(ptr4 != NULL);
-	printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
+	//printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 }
 
 /*
@@ -515,8 +516,8 @@ int main() {
    RUN_TEST(basic_one_large_allocation);
 
 
-//   RUN_TEST(multi_tiny_allocation);
-//   RUN_TEST(multi_small_allocation);
+   RUN_TEST(multi_tiny_allocation);
+   RUN_TEST(multi_small_allocation);
 
 /*
    printf("\n\n FREE TEST \n\n");

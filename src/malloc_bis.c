@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/09 20:44:23 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/11 19:33:22 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,7 @@ bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zo
 //ici current zone just pour adapter la max size available
 void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size) {
 //	bool state = false;
+	ft_printf("SPLIT %p %i %i\n", chunk_to_split, chunk_to_split->size, size);
 	if (chunk_to_split->size == size) {
 		chunk_to_split->state = BUSY;
 		current_zone->busy_chunks += 1;
@@ -68,8 +69,8 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 //		state = true;
 	} else {
 		chunk_to_split->state = BUSY;
-		size_t size_new_chunk = chunk_to_split->size - size;
-		if (size_new_chunk - sizeof(t_chunk) > 0) {
+		int size_new_chunk = chunk_to_split->size - size;
+		if (size_new_chunk - (int)sizeof(t_chunk) > 0) {
 		//	split
 			
 			t_chunk *new = new_chunk((void *)(chunk_to_split) + size + sizeof(t_chunk), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
@@ -90,6 +91,7 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 		current_zone->largest_chunk = find_largest_chunk(current_zone);
 		//find_another_one, or null if there is no dans le cas des larges genre
 	}
+	//ft_printf("SPLIT %p %i %i\n", chunk_to_split, chunk_to_split->size, size);
 	//return (state);
 }
 
@@ -104,7 +106,7 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
 		}
 		buff = buff->next;
 	}
-	printf("MAX %lu\n", max);
+	ft_printf("MAX %lu\n", max);
 	return (new_largest_chunk);
 }
 
@@ -289,19 +291,24 @@ t_type	get_zone_type(size_t size) {
 bool	get_ptr_chunk(void *ptr, t_mem_zone *ptr_mem_zone, t_chunk **ptr_chunk) {
 	t_chunk *buff = ptr_mem_zone->first;
 	while (buff) {
+	//	ft_printf("%p %p\n", buff, ptr);
 		if (buff == ptr) {
 			*ptr_chunk = buff;
 			return (true);
 		}
 		buff = buff->next;
 	}
+	ft_printf("out");
 	return (false);
 }
 
 
 bool	loop_on_zone(void *ptr, t_mem_zone **finded_zone, t_mem_zone *zone) {
+	void *zone_ptr;
 	while (zone) {
-		if (ptr >= (void *)zone->first && ptr <= ((void *)(zone->first) + zone->size)) {
+		zone_ptr = zone->first;
+		if (ptr >= zone_ptr && ptr <= zone_ptr + zone->size) {
+	//		ft_printf("%i %i %p %p %p\n", ptr >= zone_ptr, ptr <= (zone_ptr + zone->size), ptr, zone_ptr, zone_ptr + zone->size);
 			*finded_zone = zone;
 			return (true);
 		}
@@ -356,18 +363,19 @@ void ft_free(void *ptr) {
 	//Check la memzone
 	if (!get_ptr_zone(ptr, &ptr_mem_zone)) {
 		//Error
-		printf("Error getting ptr_zone\n");
+		ft_printf("Error getting ptr_zone\n");
 		return ;
 	}
+	ft_printf("we have ptr_zone");
 	//Get le ptr
 	if (!get_ptr_chunk(ptr - sizeof(t_chunk), ptr_mem_zone, &ptr_chunk)) {
 		//Error
-		printf("Error getting ptr_chunk\n");
+		ft_printf("Error getting ptr_chunk\n");
 		return ;
 	}
 	if (ptr_chunk->state != BUSY) {
 		//ERROR
-		printf("Error double free\n");
+		ft_printf("Error double free\n");
 		return ;
 	}
 
@@ -390,10 +398,13 @@ void ft_free(void *ptr) {
 //#warning "DYNAMIC is defined"
 void    *malloc(size_t size)
 {
-    ft_putstr_fd("malloc\n", STDOUT_FILENO);
+    ft_putstr_fd("malloc", STDOUT_FILENO);
+	ft_putnbr_fd((int)size, STDOUT_FILENO);
+	ft_putstr_fd("\n", STDOUT_FILENO);
     void *ptr = ft_malloc(size);
 	//show_alloc_mem();
-	//ft_printf("%p returned\n", ptr);
+	ft_printf("%p returned\n", ptr);
+	ft_printf("%i\n", sizeof(t_chunk));
 	return (ptr);
 }
 
