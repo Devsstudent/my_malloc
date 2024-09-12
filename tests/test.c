@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/11 18:42:09 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/12 18:08:15 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -499,6 +499,26 @@ void MultipleAllocationLoopMix() {
 
 
 //Pour le mix on va tester sur un char ** avec des strings bien fat puis des toute petite etc
+//
+
+void	test_realloc_basic() {
+	void *ptr = ft_malloc(1000);
+
+	void *ptr1 = ft_malloc(1000);
+	
+	void *ptr2 = ft_malloc(1000);
+
+	ft_free(ptr1);
+
+	ft_realloc(ptr, 1500);
+
+	t_alloc_info info = get_alloc_info();
+	TEST_ASSERT_TRUE(info.small->free_chunks == 2);
+	TEST_ASSERT_TRUE(info.small->busy_chunks == 2);
+	TEST_ASSERT_TRUE(info.small->first->size == 1512);
+	ft_free(ptr2);
+	ft_free(ptr);
+}
 
 int main() {
    UNITY_BEGIN();

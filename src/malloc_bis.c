@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/11 19:33:22 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/12 19:05:13 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -356,41 +356,136 @@ void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	//Maybe set memory to 0
 }
 
+bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr) {
+	bool	state = false;
+
+	if (get_ptr_zone(ptr, ptr_mem_zone))
+	{
+		if (get_ptr_chunk(ptr - sizeof(t_chunk), *ptr_mem_zone, ptr_chunk)) {
+				state = true;
+		} else {
+			ft_printf("Error getting ptr_chunk\n");
+		}
+	} else {
+		ft_printf("Error getting ptr_zone\n");
+	}
+	return state;
+}
+
 void ft_free(void *ptr) {
 	t_mem_zone	*ptr_mem_zone = NULL;
 	t_chunk		*ptr_chunk = NULL;
 
 	//Check la memzone
-	if (!get_ptr_zone(ptr, &ptr_mem_zone)) {
-		//Error
-		ft_printf("Error getting ptr_zone\n");
-		return ;
-	}
-	ft_printf("we have ptr_zone");
-	//Get le ptr
-	if (!get_ptr_chunk(ptr - sizeof(t_chunk), ptr_mem_zone, &ptr_chunk)) {
-		//Error
-		ft_printf("Error getting ptr_chunk\n");
-		return ;
-	}
-	if (ptr_chunk->state != BUSY) {
-		//ERROR
-		ft_printf("Error double free\n");
-		return ;
-	}
-
-	ptr_chunk->state = FREE;
-	ptr_mem_zone->free_chunks += 1;
-	ptr_mem_zone->busy_chunks -= 1;
+	bool	isValidPtr = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
+	if (isValidPtr && ptr_chunk->state == BUSY) {
+			//ERROR
+			ft_printf("Error double free\n");
+	} else if (isValidPtr) {
+		ptr_chunk->state = FREE;
+		ptr_mem_zone->free_chunks += 1;
+		ptr_mem_zone->busy_chunks -= 1;
 
 
-	merge_chunk(&ptr_chunk, ptr_mem_zone);
-	//Now if the next or the prev is free, then we construct a big chunk
+		merge_chunk(&ptr_chunk, ptr_mem_zone);
+		//Now if the next or the prev is free, then we construct a big chunk
+
+		if (ptr_mem_zone->largest_chunk && ptr_chunk->size > ptr_mem_zone->largest_chunk->size) {
+			ptr_mem_zone->largest_chunk = ptr_chunk;
+		}
+	}
+}
+
+bool	check_prev_next(t_chunk *next, t_chunk *prev, t_chunk *chunk) {
 	
+}
 
-	if (ptr_mem_zone->largest_chunk && ptr_chunk->size > ptr_mem_zone->largest_chunk->size) {
-		ptr_mem_zone->largest_chunk = ptr_chunk;
+size_t	get_available_size(bool prev_free, bool next_free, size_t size, size_t next_size, size_t prev_size) {
+	size_t	available_size;
+
+	available_size = 0;
+	if (next_free && prev_free) {
+		available_size = next->size + ptr_chunk->size + prev_size;
+	} else if (next_free) {
+		available_size = next->size + ptr_chunk->size;
+	} else if (prev_free) {
+		available_size = ptr_chunk->size + prev_size;
 	}
+
+	return available_size;
+}
+
+//setup les chunk
+
+
+//Enum case ? both prev next
+
+
+
+bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res) {
+	bool	state;
+	t_chunk	*next;
+	t_chunk	*prev
+	size_t	available_size;
+	bool	next_free;
+	bool	prev_free;
+	void	*first;
+
+	state = false;
+	next = ptr_chunk->next;
+	prev = ptr_chunk->prev;
+
+	prev_free = prev && prev->state == FREE;
+	next_free = next && next->state == FREE;
+
+	available_size = get_available_size(prev_free, next_free, size, next->size, prev->size);
+
+	//On balance le prev_free
+	//On balance le next_free
+	if (available_size < size) {
+		*res = ft_malloc(size);
+		state = true;
+	} else {
+		//Je free le current chunk / en stockant la data sur la stack
+		//comme ca pas besoin de check le next etc
+		//et ensuite je le realloc
+		//Un peu simuler le merge chunk
+		//kk
+		if (prev_free) {
+			first = (void *)prev + sizeof(t_chunk);
+			//on commence a prev
+		} else if (next_free) {
+			first = (void *)ptr_chunk + sizeof(t_chunk);
+			//on commence a ptr_chunk
+		}
+		
+		//Split le first
+	}
+	return (state);
+}
+
+void	*ft_realloc(void *ptr, size_t size) {
+	void *res = NULL;
+	t_mem_zone	*ptr_mem_zone = NULL;
+	t_chunk		*ptr_chunk = NULL;
+
+	size = (size + 15) & ~15;
+	if (!ptr) {
+		res = ft_malloc(size);
+	} else if (ptr && size == 0) {
+		ft_free(ptr);
+	} else if (valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
+			if (ptr_chunk->state == FREE || ptr_chunk->size <= size) {
+				res = ptr;
+			} else {
+				
+			}
+		}
+	}
+
+	//Check la memzone
+
+	return (res);
 }
 
 #ifdef DYNAMIC
@@ -412,6 +507,12 @@ void    free(void *ptr)
 {
     ft_putstr_fd("free\n", STDOUT_FILENO);
     ft_free(ptr);
+}
+
+void *realloc(void *ptr, size_t size) {
+	void *res = ft_realloc(ptr, size);
+
+	return (res);
 }
 
 #endif
