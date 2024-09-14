@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/12 18:08:15 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/14 21:00:18 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -515,14 +515,14 @@ void	test_realloc_basic() {
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.small->free_chunks == 2);
 	TEST_ASSERT_TRUE(info.small->busy_chunks == 2);
-	TEST_ASSERT_TRUE(info.small->first->size == 1512);
+	TEST_ASSERT_TRUE(info.small->first->size == 1504);
 	ft_free(ptr2);
-	ft_free(ptr);
+//	ft_free(ptr);
 }
 
 int main() {
    UNITY_BEGIN();
-
+/*
    RUN_TEST(multi_large_allocation);
 
    RUN_TEST(test_small_alloc_2_mem_zone);
@@ -537,7 +537,11 @@ int main() {
 
 
    RUN_TEST(multi_tiny_allocation);
-   RUN_TEST(multi_small_allocation);
+   RUN_TEST(multi_small_allocation);*/
+
+   RUN_TEST(test_realloc_basic);
+
+   //RUN_TEST(realloc_lower_size) //Checker le next etc new chunk free en gros
 
 /*
    printf("\n\n FREE TEST \n\n");

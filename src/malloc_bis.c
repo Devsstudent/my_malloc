@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/12 19:05:13 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/14 20:57:49 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -378,7 +378,7 @@ void ft_free(void *ptr) {
 
 	//Check la memzone
 	bool	isValidPtr = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
-	if (isValidPtr && ptr_chunk->state == BUSY) {
+	if (isValidPtr && ptr_chunk->state == FREE) {
 			//ERROR
 			ft_printf("Error double free\n");
 	} else if (isValidPtr) {
@@ -396,70 +396,53 @@ void ft_free(void *ptr) {
 	}
 }
 
-bool	check_prev_next(t_chunk *next, t_chunk *prev, t_chunk *chunk) {
-	
-}
-
-size_t	get_available_size(bool prev_free, bool next_free, size_t size, size_t next_size, size_t prev_size) {
+size_t	get_available_size(t_chunk *next, size_t current_ptr_size) {
 	size_t	available_size;
 
 	available_size = 0;
-	if (next_free && prev_free) {
-		available_size = next->size + ptr_chunk->size + prev_size;
-	} else if (next_free) {
-		available_size = next->size + ptr_chunk->size;
-	} else if (prev_free) {
-		available_size = ptr_chunk->size + prev_size;
+	if (next && next->state == FREE) {
+		available_size = next->size + current_ptr_size;
 	}
+	ft_printf("next->state %i\n", next->state);
 
 	return available_size;
 }
 
-//setup les chunk
-
-
-//Enum case ? both prev next
-
-
-
-bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res) {
+bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_mem_zone) {
 	bool	state;
-	t_chunk	*next;
-	t_chunk	*prev
 	size_t	available_size;
-	bool	next_free;
-	bool	prev_free;
-	void	*first;
+	void	*ptr;
+	char	saved_data[ptr_chunk->size];
+	t_chunk *next;
 
 	state = false;
-	next = ptr_chunk->next;
-	prev = ptr_chunk->prev;
+	ptr = (void *)ptr_chunk + sizeof(t_chunk);
 
-	prev_free = prev && prev->state == FREE;
-	next_free = next && next->state == FREE;
+	available_size = get_available_size(ptr_chunk->next, ptr_chunk->size);
 
-	available_size = get_available_size(prev_free, next_free, size, next->size, prev->size);
-
-	//On balance le prev_free
-	//On balance le next_free
-	if (available_size < size) {
+	ft_memcpy(saved_data, ptr, ptr_chunk->size);
+	if (available_size < size && available_size != ptr_chunk->size) {
+		ft_printf("case maloc ++\n size %i\n", ptr_chunk->size);
+		ft_free(ptr);
 		*res = ft_malloc(size);
-		state = true;
-	} else {
-		//Je free le current chunk / en stockant la data sur la stack
-		//comme ca pas besoin de check le next etc
-		//et ensuite je le realloc
-		//Un peu simuler le merge chunk
-		//kk
-		if (prev_free) {
-			first = (void *)prev + sizeof(t_chunk);
-			//on commence a prev
-		} else if (next_free) {
-			first = (void *)ptr_chunk + sizeof(t_chunk);
-			//on commence a ptr_chunk
+		if (res)
+		{
+			state = true;
+			ft_memcpy(*res, saved_data, ptr_chunk->size);
 		}
-		
-		//Split le first
+	} else {
+		if ((ptr_chunk->prev && ptr_chunk->prev->state != FREE) || !ptr_chunk->prev) {
+			ft_free(ptr);
+		} else {
+			ptr_chunk->state = FREE;
+			ptr_chunk->size = available_size;
+			ft_memset(ptr + ptr_chunk->size, 0, ptr_chunk->next->size + sizeof(t_chunk));
+			next = ptr_chunk->next;
+			next->prev = ptr_chunk;
+			ptr_chunk->next = next;
+		}
+		split_chunk(ptr_chunk, *ptr_mem_zone, size);
+		state = true;
 	}
 	return (state);
 }
@@ -475,16 +458,12 @@ void	*ft_realloc(void *ptr, size_t size) {
 	} else if (ptr && size == 0) {
 		ft_free(ptr);
 	} else if (valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
-			if (ptr_chunk->state == FREE || ptr_chunk->size <= size) {
+			if (ptr_chunk->state == FREE) {
 				res = ptr;
-			} else {
-				
+			} else if (!realloc_ptr(ptr_chunk, size, &res, &ptr_mem_zone)){
+				res = NULL;
 			}
-		}
 	}
-
-	//Check la memzone
-
 	return (res);
 }
 
