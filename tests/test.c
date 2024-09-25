@@ -86,6 +86,40 @@ void test_tiny_alloc_2_mem_zone()
 	TEST_ASSERT_TRUE(info.tiny->free_chunks == 1);
 }
 
+void test_small_alloc_deter_mem_zone()
+{
+	int rows = 32;
+	int cols = 10000;
+
+    // Dynamically allocate memory for a 2D array of characters
+	//t_alloc_info *alloc_info = get_info();
+    char **matrix = (char **)ft_malloc(rows * sizeof(char *));
+	TEST_ASSERT_TRUE(matrix != NULL);
+
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (char *)ft_malloc((cols + 1) * sizeof(char)); // +1 for null terminator
+		TEST_ASSERT_TRUE(matrix[i] != NULL);
+    }
+    // Fill the 2D array with sample data
+    char fillChar = 'A';
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = fillChar++;
+        }
+        matrix[i][cols] = '\0'; // Null-terminate each string
+    }
+	//t_alloc_info info = get_alloc_info();
+//	TEST_ASSERT_TRUE(info.nb_tiny_elems == 2);
+    // Free dynamically allocated memory
+    for (int i = 0; i < rows; i++) {
+        ft_free(matrix[i]);
+    }
+    ft_free(matrix);
+	//printf("%li\n", alloc_info->large.busy_chunks);
+//	TEST_ASSERT_TRUE(info.tiny->busy_chunks == 0);
+//	TEST_ASSERT_TRUE(info.tiny->free_chunks == 1);
+}
+
 void basic_one_tiny_allocation() {
 	printf("Basic one tiny allocation test\n");
 	char *ptr = ft_malloc(151);
@@ -210,6 +244,10 @@ void multi_tiny_allocation() {
 	TEST_ASSERT_TRUE(ptr3 != NULL);
 	char *ptr4 = basic_tiny_alloc();
 	TEST_ASSERT_TRUE(ptr4 != NULL);
+	ft_free(ptr1);
+	ft_free(ptr2);
+	ft_free(ptr3);
+	ft_free(ptr4);
 	//printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 }
 
@@ -223,6 +261,10 @@ void multi_small_allocation() {
 	TEST_ASSERT_TRUE(ptr3 != NULL);
 	char *ptr4 = basic_small_alloc();
 	TEST_ASSERT_TRUE(ptr4 != NULL);
+	ft_free(ptr1);
+	ft_free(ptr2);
+	ft_free(ptr3);
+	ft_free(ptr4);
 	//printf("%s %s %s %s\n", ptr1, ptr2, ptr3, ptr4);
 }
 
@@ -514,6 +556,7 @@ void	test_realloc_basic() {
 
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.small->free_chunks == 2);
+	printf("%li\n", info.small->busy_chunks);
 	TEST_ASSERT_TRUE(info.small->busy_chunks == 2);
 	TEST_ASSERT_TRUE(info.small->first->size == 1504);
 	ft_free(ptr2);
@@ -522,7 +565,7 @@ void	test_realloc_basic() {
 
 int main() {
    UNITY_BEGIN();
-/*
+
    RUN_TEST(multi_large_allocation);
 
    RUN_TEST(test_small_alloc_2_mem_zone);
@@ -537,11 +580,12 @@ int main() {
 
 
    RUN_TEST(multi_tiny_allocation);
-   RUN_TEST(multi_small_allocation);*/
+   RUN_TEST(multi_small_allocation);
 
    RUN_TEST(test_realloc_basic);
 
-   //RUN_TEST(realloc_lower_size) //Checker le next etc new chunk free en gros
+	RUN_TEST(test_small_alloc_deter_mem_zone);
+//   RUN_TEST(realloc_lower_size) //Checker le next etc new chunk free en gros
 
 /*
    printf("\n\n FREE TEST \n\n");

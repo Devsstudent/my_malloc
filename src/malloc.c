@@ -12,7 +12,7 @@
 
 #include "malloc.h"
 //Global
-t_alloc_info alloc_info;
+//t_alloc_info alloc_info;
 
 //Initialiser la heap -> Setup les 3 pages / Set un block free de pages size
 // -> Preallocate 
@@ -41,7 +41,7 @@ size_t	get_current_free_space(t_pages *page) {
 		//ft_printf("%ld %ld %ld\n", page->total_bytes_free, page->free_chunks, page->busy_chunks);
 	return (page->total_bytes_free - (page->free_chunks + page->busy_chunks) * sizeof(t_chunk));
 }*/
-
+/*
 void	add_back(size_t size, void *addr, t_pages *page) {
 	//ft_printf("CALL ADDBACK\n");
 	t_chunk *buff = page->chunks;
@@ -58,10 +58,9 @@ void	add_back(size_t size, void *addr, t_pages *page) {
 		return ;
 	}
 //	size_t	free_space = page->total_bytes_free;
-	/*
 	if (page->total_bytes_free < size || page->total_bytes_free - sizeof(t_chunk) <= 0) {
 		return ;
-	}*/
+	}
 	t_chunk *last = page->last;
 	int	alignement_needed = (size_t)((void *)buff + buff->size) % 8;
 //	if (size + alignement_needed > free_space) {
@@ -457,5 +456,5 @@ void    *realloc(void *ptr, size_t size)
 	return (ptr2);
 
 }
-
+*/
 #endif

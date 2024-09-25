@@ -1,11 +1,11 @@
-#ifndef MALLOC_H
-# define MALLOC_H
+#pragma once
 
 # include <stddef.h>
 # include <sys/mman.h>
 # include <stdbool.h>
 # include <unistd.h>
 # include "libft.h"
+# include <pthread.h>
 # define PAGE_SIZE getpagesize()
 # define TINY_ZONE_SIZE (560 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone)
 # define SMALL_ZONE_SIZE (4096 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone)
@@ -67,20 +67,25 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone);
 t_chunk *get_chunk(t_mem_zone *current_zone, size_t size);
 void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size);
 bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zone);
-
-
 bool	get_ptr_chunk(void *ptr, t_mem_zone *ptr_mem_zone, t_chunk **ptr_chunk);
 bool	loop_on_zone(void *ptr, t_mem_zone **finded_zone, t_mem_zone *zone);
 bool	get_ptr_zone(void *ptr, t_mem_zone **finded_zone);
 void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
+bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr);
+void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
+void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **base);
+void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **base);
+size_t	get_available_size(t_chunk *next, size_t current_ptr_size);
 
 extern t_alloc_info get_alloc_info();
 
-extern t_alloc_info *get_info(void);
+t_alloc_info *get_info(void);
 void	*ft_malloc(size_t size);
 void	*ft_realloc(void *ptr, size_t size);
 void	ft_free(void *ptr);
 
 extern	void	show_alloc_mem();
 
-#endif
+extern pthread_mutex_t mutex_malloc;
+
+extern t_alloc_info g_alloc_info;
