@@ -4,6 +4,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 	bool	state;
 	size_t	available_size;
 	void	*ptr;
+	int		size_mem_cpy = 0;
 	t_chunk *next;
 
 	state = false;
@@ -12,15 +13,18 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 	available_size = get_available_size(ptr_chunk->next, ptr_chunk->size);
 
 //	if (available_size < size && available_size != ptr_chunk->size) {
-		ft_printf("case maloc ++\n size %i\n", ptr_chunk->size);
 		*res = ft_malloc(size);
+		if (ptr_chunk->size < size) {
+			size_mem_cpy = ptr_chunk->size;
+		} else {
+			size_mem_cpy = size;
+		}
 		if (res)
 		{
 			state = true;
-			ft_memcpy(*res, ptr, ptr_chunk->size);
+			ft_memcpy(*res, ptr, size_mem_cpy);
 			ft_free(ptr);
 		}
-		ft_printf("ALORS COMME CA MALLOC IL CRASH, %i\n", size);
 /* { else {
 		t_chunk *base_addr = NULL;
 		//Recode pour uiliser le merge chunk
@@ -36,7 +40,6 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 		state = true;
 		*res = ptr;
 	}*/
-	ft_printf("state %i\n", state);
 	return (state);
 }
 
@@ -51,7 +54,6 @@ void	*ft_realloc(void *ptr, size_t size) {
 	} else if (ptr && size == 0) {
 		ft_free(ptr);
 	} else if (valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
-			ft_printf("realloc ptr valid\n");
 //			pthread_mutex_lock(&mutex_malloc);
 			if (ptr_chunk->state == FREE) {
 				res = ptr;

@@ -73,9 +73,10 @@ bool	get_ptr_zone(void *ptr, t_mem_zone **finded_zone);
 void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
 bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr);
 void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
-void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **base);
-void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **base);
+void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
+void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
 size_t	get_available_size(t_chunk *next, size_t current_ptr_size);
+void loop_chunk(t_chunk *first, size_t *allocated_bytes);
 
 extern t_alloc_info get_alloc_info();
 

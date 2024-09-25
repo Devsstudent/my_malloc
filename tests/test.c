@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/25 12:32:43 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/25 17:13:27 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 
 void setUp() {}
 void tearDown() {}
-
 
 void test_small_alloc_2_mem_zone()
 {
@@ -75,6 +74,7 @@ void test_tiny_alloc_2_mem_zone()
         matrix[i][cols] = '\0'; // Null-terminate each string
     }
 	t_alloc_info info = get_alloc_info();
+	show_alloc_mem();
 	TEST_ASSERT_TRUE(info.nb_tiny_elems == 2);
     // Free dynamically allocated memory
     for (int i = 0; i < rows; i++) {
@@ -464,7 +464,6 @@ void MultipleAllocationLarge() {
 	printf("%li\n", alloc_info->large.busy_chunks);
 	TEST_ASSERT_TRUE(alloc_info->large.busy_chunks == 0);
 }
-
 void MultipleAllocationLoopMix() {
     t_alloc_info *alloc_info = get_info();
 
@@ -504,6 +503,7 @@ void MultipleAllocationLoopMix() {
             // Ensure busy chunks count increases
             TEST_ASSERT_TRUE(busy_chunks_before == (size_t)(j + 1));
         }
+		show_alloc_mem();
 
         // Free all allocated memory
         for (int j = 0; j < 100; j++) {
@@ -537,7 +537,6 @@ void MultipleAllocationLoopMix() {
         }
     }
 }
-*/
 
 
 //Pour le mix on va tester sur un char ** avec des strings bien fat puis des toute petite etc
@@ -563,26 +562,28 @@ void	test_realloc_basic() {
 //	ft_free(ptr);
 }
 
+*/
+
 void	test_merging_chunk() {
 	void *ptr = ft_malloc(30);
 	void *ptr2 = ft_malloc(50);
+	void *ptr3 = ft_malloc(4096);
 
+	show_alloc_mem();
 	ft_free(ptr);
 	ft_free(ptr2);
 
 	ptr = ft_malloc(300);
 
 	ft_free(ptr);
+	ptr2 = ft_malloc(12);
 }
-
+`	
 int main() {
    UNITY_BEGIN();
-/*
+   /*
    RUN_TEST(multi_large_allocation);
 
-   RUN_TEST(test_small_alloc_2_mem_zone);
-
-   RUN_TEST(test_tiny_alloc_2_mem_zone);
 
    RUN_TEST(basic_one_tiny_allocation);
 
@@ -597,7 +598,10 @@ int main() {
    RUN_TEST(test_realloc_basic);
 
 	RUN_TEST(test_small_alloc_deter_mem_zone);*/
-   RUN_TEST(test_merging_chunk);
+   //RUN_TEST(test_merging_chunk);
+   RUN_TEST(test_small_alloc_2_mem_zone);
+
+   RUN_TEST(test_tiny_alloc_2_mem_zone);
 //   RUN_TEST(realloc_lower_size) //Checker le next etc new chunk free en gros
 
 /*

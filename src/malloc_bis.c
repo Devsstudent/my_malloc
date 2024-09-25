@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/25 12:15:12 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/25 16:31:17 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "malloc.h"
@@ -33,10 +33,6 @@ t_alloc_info get_alloc_info() {
 void *ft_malloc(size_t size) {
 	pthread_mutex_init(&mutex_malloc, NULL);
 
-	if (size == 26) {
-		ft_printf("fin");
-		ft_printf("fin2\n");
-	}
 	size = (size + 31) & ~31;
 
 	pthread_mutex_lock(&mutex_malloc);

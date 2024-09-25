@@ -58,7 +58,7 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
 		}
 		buff = buff->next;
 	}
-	ft_printf("MAX %lu\n", max);
+//	ft_printf("MAX %lu\n", max);
 	return (new_largest_chunk);
 }
 
@@ -98,6 +98,5 @@ bool	get_ptr_chunk(void *ptr, t_mem_zone *ptr_mem_zone, t_chunk **ptr_chunk) {
 		}
 		buff = buff->next;
 	}
-	ft_printf("out");
 	return (false);
 }
