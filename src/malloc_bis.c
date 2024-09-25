@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/04 22:04:15 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/14 20:57:49 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/25 12:15:12 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "malloc.h"
@@ -23,6 +23,7 @@ t_alloc_info g_alloc_info = {
 	.last_large = NULL,
 	.nb_large_elems = 0,
 };
+
 pthread_mutex_t mutex_malloc = PTHREAD_MUTEX_INITIALIZER;
 
 t_alloc_info get_alloc_info() {

@@ -16,12 +16,12 @@ void ft_free(void *ptr) {
 		ptr_mem_zone->busy_chunks -= 1;
 
 
-		merge_chunk(&ptr_chunk, ptr_mem_zone);
+	//	merge_chunk(&ptr_chunk, ptr_mem_zone);
 		//Now if the next or the prev is free, then we construct a big chunk
 
-		if (ptr_mem_zone->largest_chunk && ptr_chunk->size > ptr_mem_zone->largest_chunk->size) {
-			ptr_mem_zone->largest_chunk = ptr_chunk;
-		}
+	//	if (ptr_mem_zone->largest_chunk && ptr_chunk->size > ptr_mem_zone->largest_chunk->size) {
+	//		ptr_mem_zone->largest_chunk = ptr_chunk;
+	//	}
 	//	pthread_mutex_unlock(&mutex_malloc);
 	}
 }

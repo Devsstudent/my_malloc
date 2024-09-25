@@ -11,7 +11,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 
 	available_size = get_available_size(ptr_chunk->next, ptr_chunk->size);
 
-	if (available_size < size && available_size != ptr_chunk->size) {
+//	if (available_size < size && available_size != ptr_chunk->size) {
 		ft_printf("case maloc ++\n size %i\n", ptr_chunk->size);
 		*res = ft_malloc(size);
 		if (res)
@@ -21,7 +21,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 			ft_free(ptr);
 		}
 		ft_printf("ALORS COMME CA MALLOC IL CRASH, %i\n", size);
-	} else {
+/* { else {
 		t_chunk *base_addr = NULL;
 		//Recode pour uiliser le merge chunk
 		//Puis split
@@ -35,7 +35,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 		split_chunk(ptr_chunk, *ptr_mem_zone, size);
 		state = true;
 		*res = ptr;
-	}
+	}*/
 	ft_printf("state %i\n", state);
 	return (state);
 }

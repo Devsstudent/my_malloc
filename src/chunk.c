@@ -51,7 +51,7 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
 	t_chunk	*new_largest_chunk = NULL;
 	size_t	max = 0;
 	while (buff) {
-		ft_printf("%i\n", buff->zone_type);
+//		ft_printf("%i\n", buff->zone_type);
 		if (buff->size > max && buff->state == FREE) {
 			new_largest_chunk = buff;
 			max = buff->size;

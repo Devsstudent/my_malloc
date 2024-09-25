@@ -1,7 +1,6 @@
 #include "malloc.h"
 
 void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **base) {
-
 	t_chunk	*new_chunk = NULL;
 	t_chunk *chunk_freed = *ptr_chunk;
 
@@ -13,7 +12,9 @@ void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **ba
 
 	t_chunk *next = chunk_freed->next;
 
+		printf("allllo %p\n", next);
 	if (next && next->next) {
+		printf("%p\n", next->next);
 		new_chunk->next = next->next;
 		next->next->prev = new_chunk;
 	}
@@ -24,10 +25,12 @@ void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	t_chunk	*new_chunk = NULL;
 	t_chunk *chunk_freed = *ptr_chunk;
 
-	if (chunk_freed->prev && chunk_freed->prev->state == FREE) 
+	if (chunk_freed->prev && chunk_freed->prev->state == FREE) {
 		merge_with_prev(ptr_chunk, ptr_mem_zone, &new_chunk);
-	if (chunk_freed->next && chunk_freed->next->state == FREE)
+	}
+	if (chunk_freed->next && chunk_freed->next->state == FREE) {
 		merge_with_next(ptr_chunk, ptr_mem_zone, &new_chunk);
+	}
 	if (new_chunk) {
 		*ptr_chunk = new_chunk;
 	}

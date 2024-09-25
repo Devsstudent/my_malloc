@@ -24,7 +24,7 @@ $(NAME): $(OBJ)
 	gcc -shared -o $(NAME) -fPIC $(addprefix obj/, $(OBJ)) $(LIB)
 
 
-$(OBJ): $(SRC) obj_rep
+$(OBJ): obj_rep $(SRC)
 	@echo building
 
 $(SRC):
