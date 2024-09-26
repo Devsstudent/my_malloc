@@ -1,16 +1,16 @@
 #include "malloc.h"
 
 void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
-	t_chunk	*next;
+	t_chunk	*next = NULL;
 	t_chunk *chunk_freed = *ptr_chunk;
 
-
-	ft_printf("%i %i\n", chunk_freed->size, chunk_freed->next->size);
+//	ft_printf("%i %i\n", chunk_freed->size, chunk_freed->next->size);
+	show_alloc_mem();
 	if (chunk_freed->next->size > 0) {
 		chunk_freed->size += chunk_freed->next->size + sizeof(t_chunk);
-//		ft_memset(chunk_freed->next, 0, chunk_freed->next->size + sizeof(t_chunk));
+		next = chunk_freed->next->next;
+		ft_memset(chunk_freed->next, 0, chunk_freed->next->size)/* + sizeof(t_chunk))*/;
 	}
-	next = chunk_freed->next->next;
 	if (next) {
 		next->prev = chunk_freed;
 	}
@@ -27,9 +27,9 @@ void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 //		merge_with_prev(ptr_chunk, ptr_mem_zone);
 //	}
 	ft_printf("%p\n", chunk_freed);
-	if (chunk_freed->next && chunk_freed->next->state == FREE) {
-		merge_with_next(ptr_chunk, ptr_mem_zone);
-	}
+//	if (chunk_freed && chunk_freed->next && chunk_freed->next->state == FREE) {
+//		merge_with_next(ptr_chunk, ptr_mem_zone);
+//	}
 	if (new_chunk) {
 		*ptr_chunk = new_chunk;
 	}

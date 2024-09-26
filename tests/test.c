@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/25 17:13:27 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/26 09:21:44 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -567,7 +567,7 @@ void	test_realloc_basic() {
 void	test_merging_chunk() {
 	void *ptr = ft_malloc(30);
 	void *ptr2 = ft_malloc(50);
-	void *ptr3 = ft_malloc(4096);
+//	void *ptr3 = ft_malloc(4096);
 
 	show_alloc_mem();
 	ft_free(ptr);
@@ -578,7 +578,7 @@ void	test_merging_chunk() {
 	ft_free(ptr);
 	ptr2 = ft_malloc(12);
 }
-`	
+
 int main() {
    UNITY_BEGIN();
    /*
@@ -598,10 +598,11 @@ int main() {
    RUN_TEST(test_realloc_basic);
 
 	RUN_TEST(test_small_alloc_deter_mem_zone);*/
-   //RUN_TEST(test_merging_chunk);
-   RUN_TEST(test_small_alloc_2_mem_zone);
+  RUN_TEST(test_merging_chunk);
 
-   RUN_TEST(test_tiny_alloc_2_mem_zone);
+  // RUN_TEST(test_small_alloc_2_mem_zone);
+
+   //RUN_TEST(test_tiny_alloc_2_mem_zone);
 //   RUN_TEST(realloc_lower_size) //Checker le next etc new chunk free en gros
 
 /*

@@ -15,7 +15,7 @@ void loop_chunk(t_chunk *first, size_t *allocated_bytes) {
 
 	while (buff) {
 		next = buff->next;
-		ft_printf("%p - %p: %lu bytes\n", buff, next, buff->size);
+		ft_printf("%p - %p: %lu bytes State %i\n", buff, next, buff->size, buff->state);
 		*allocated_bytes = *allocated_bytes + buff->size;
 		buff = next;
 	}
@@ -28,7 +28,6 @@ void	show_alloc_mem() {
 
 
 	ft_printf("%s %p %i\n", "TINY: ", info.tiny, info.nb_tiny_elems);
-
 	loop_mem_zone(info.tiny, info.last_tiny, &allocated_bytes);
 	ft_printf("%s %p\n", "SMALL: ", info.small);
 	loop_mem_zone(info.small, info.last_small, &allocated_bytes);
