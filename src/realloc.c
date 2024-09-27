@@ -12,7 +12,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 
 	available_size = get_available_size(ptr_chunk->next, ptr_chunk->size);
 
-//	if (available_size < size && available_size != ptr_chunk->size) {
+	if (available_size < size && available_size != ptr_chunk->size) {
 		*res = ft_malloc(size);
 		if (ptr_chunk->size < size) {
 			size_mem_cpy = ptr_chunk->size;
@@ -25,8 +25,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 			ft_memcpy(*res, ptr, size_mem_cpy);
 			ft_free(ptr);
 		}
-/* { else {
-		t_chunk *base_addr = NULL;
+	} else {
 		//Recode pour uiliser le merge chunk
 		//Puis split
 		//Ne pas oublier de copier la data
@@ -34,12 +33,12 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 			ptr_chunk->state = FREE;
 			(*ptr_mem_zone)->free_chunks += 1;
 			(*ptr_mem_zone)->busy_chunks -= 1;
-			merge_with_next(&ptr_chunk, *ptr_mem_zone, &base_addr);
+			merge_with_next(&ptr_chunk, *ptr_mem_zone);
 		}
 		split_chunk(ptr_chunk, *ptr_mem_zone, size);
 		state = true;
 		*res = ptr;
-	}*/
+	}
 	return (state);
 }
 
@@ -50,7 +49,10 @@ void	*ft_realloc(void *ptr, size_t size) {
 
 	size = (size + 31) & ~31;
 	if (!ptr) {
+//		ft_printf("NULL");
+		show_alloc_mem();
 		res = ft_malloc(size);
+		//ft_printf("%p", res);
 	} else if (ptr && size == 0) {
 		ft_free(ptr);
 	} else if (valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {

@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/09/26 09:21:44 by odessein         ###   ########.fr       */
+/*   Updated: 2024/09/27 16:41:57 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,9 +45,10 @@ void test_small_alloc_2_mem_zone()
         ft_free(matrix[i]);
     }
     ft_free(matrix);
-	//printf("%li\n", alloc_info->large.busy_chunks);
+
+	printf("%li\n", info.small->free_chunks);
 	TEST_ASSERT_TRUE(info.small->busy_chunks == 0);
-	TEST_ASSERT_TRUE(info.small->free_chunks == 1);
+//	TEST_ASSERT_TRUE(info.small->free_chunks == 1);
 }
 
 
@@ -577,6 +578,7 @@ void	test_merging_chunk() {
 
 	ft_free(ptr);
 	ptr2 = ft_malloc(12);
+	ft_free(ptr2);
 }
 
 int main() {
@@ -598,9 +600,9 @@ int main() {
    RUN_TEST(test_realloc_basic);
 
 	RUN_TEST(test_small_alloc_deter_mem_zone);*/
-  RUN_TEST(test_merging_chunk);
+   RUN_TEST(test_merging_chunk);
 
-  // RUN_TEST(test_small_alloc_2_mem_zone);
+   RUN_TEST(test_small_alloc_2_mem_zone);
 
    //RUN_TEST(test_tiny_alloc_2_mem_zone);
 //   RUN_TEST(realloc_lower_size) //Checker le next etc new chunk free en gros

@@ -5,6 +5,9 @@ void	loop_mem_zone(t_mem_zone *start, t_mem_zone *end, size_t *allocated_bytes) 
 
 	while (buff) {
 		loop_chunk(buff->first, allocated_bytes);
+		if (buff->largest_chunk) {
+			ft_printf("test %i %p\n", (int)buff->largest_chunk->size, buff->largest_chunk);
+		}
 		buff = buff->next;
 	}
 }
@@ -15,7 +18,7 @@ void loop_chunk(t_chunk *first, size_t *allocated_bytes) {
 
 	while (buff) {
 		next = buff->next;
-		ft_printf("%p - %p: %lu bytes State %i should m %i\n", buff, next, buff->size, buff->state);
+		ft_printf("%p - %p: %lu bytes State %i\n", buff, next, buff->size, buff->state);
 //		if (buff->should_be_merge != 0) {
 	//		exit(1);
 		//}

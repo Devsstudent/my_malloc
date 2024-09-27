@@ -9,21 +9,15 @@ bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zo
 	return (state);
 }
 
-//ici current zone just pour adapter la max size available
 void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size) {
-//	bool state = false;
-	ft_printf("SPLIT %p %i %i\n", chunk_to_split, chunk_to_split->size, size);
 	if (chunk_to_split->size == size) {
 		chunk_to_split->state = BUSY;
 		current_zone->busy_chunks += 1;
 		current_zone->free_chunks -= 1;
-//		state = true;
 	} else {
 		chunk_to_split->state = BUSY;
 		int size_new_chunk = chunk_to_split->size - size;
 		if (size_new_chunk - (int)sizeof(t_chunk) > 0) {
-		//	split
-			
 			t_chunk *new = new_chunk((void *)(chunk_to_split) + size + sizeof(t_chunk), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
 			new->prev = chunk_to_split;
 			if (chunk_to_split->next) {
@@ -31,7 +25,6 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 				chunk_to_split->next->prev = new;
 			}
 			chunk_to_split->next = new;
-//			state = true;
 			current_zone->busy_chunks += 1;
 		} else {
 			current_zone->free_chunks -= 1;
@@ -40,10 +33,7 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 	}
 	if (current_zone->largest_chunk == chunk_to_split) {
 		current_zone->largest_chunk = find_largest_chunk(current_zone);
-		//find_another_one, or null if there is no dans le cas des larges genre
 	}
-	//ft_printf("SPLIT %p %i %i\n", chunk_to_split, chunk_to_split->size, size);
-	//return (state);
 }
 
 t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
@@ -51,14 +41,12 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
 	t_chunk	*new_largest_chunk = NULL;
 	size_t	max = 0;
 	while (buff) {
-//		ft_printf("%i\n", buff->zone_type);
 		if (buff->size > max && buff->state == FREE) {
 			new_largest_chunk = buff;
 			max = buff->size;
 		}
 		buff = buff->next;
 	}
-//	ft_printf("MAX %lu\n", max);
 	return (new_largest_chunk);
 }
 
@@ -74,6 +62,7 @@ t_chunk *get_chunk(t_mem_zone *current_zone, size_t size) {
 			matching_chunk = buff;
 		buff = buff->next;
 	}
+	ft_printf("%p\n", matching_chunk);
 	return (matching_chunk);
 }
 
@@ -91,7 +80,6 @@ t_chunk *new_chunk(void *chunk_addr, t_state state, t_type zone_type, size_t siz
 bool	get_ptr_chunk(void *ptr, t_mem_zone *ptr_mem_zone, t_chunk **ptr_chunk) {
 	t_chunk *buff = ptr_mem_zone->first;
 	while (buff) {
-	//	ft_printf("%p %p\n", buff, ptr);
 		if (buff == ptr) {
 			*ptr_chunk = buff;
 			return (true);

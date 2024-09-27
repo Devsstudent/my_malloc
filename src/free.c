@@ -5,11 +5,10 @@ void ft_free(void *ptr) {
 	t_chunk		*ptr_chunk = NULL;
 
 	//Check la memzone
-	ft_printf("in\n");
 	bool	isValidPtr = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
 	if (isValidPtr && ptr_chunk->state == FREE) {
-			//ERROR
-		ft_printf("Error double free\n");
+		char *err = "Error double free\n";
+		write(2, err, ft_strlen(err));
 	} else if (isValidPtr) {
 	//	pthread_mutex_lock(&mutex_malloc);
 		ptr_chunk->state = FREE;
@@ -31,7 +30,6 @@ void ft_free(void *ptr) {
 				}
 				buff = buff->next;
 			}
-			ft_printf("prev %p\n", prev);
 			if (prev) {
 				prev->next = ptr_mem_zone->next;
 			}
@@ -45,11 +43,8 @@ void ft_free(void *ptr) {
 				write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
 			}
 		}
-		//Now if the next or the prev is free, then we construct a big chunk
-
 	//	pthread_mutex_unlock(&mutex_malloc);
 	}
-	ft_printf("out free\n");
 }
 
 void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
