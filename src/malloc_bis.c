@@ -49,6 +49,7 @@ void *ft_malloc(size_t size) {
 		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
 		return NULL;
 	}
+	ft_printf("%p\n", asked_chunk);
 	return ((void *)(asked_chunk) + sizeof(t_chunk));
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 # include <stddef.h>
+# include <malloc.h>
 # include <sys/mman.h>
 # include <stdbool.h>
 # include <unistd.h>
@@ -25,7 +26,6 @@ typedef struct chunk {
 	size_t				size;
 	t_state				state;
 	t_type				zone_type;
-	bool				should_be_merge;
 	struct chunk		*next;
 	struct chunk		*prev;
 }	t_chunk;

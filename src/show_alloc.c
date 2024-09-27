@@ -15,7 +15,10 @@ void loop_chunk(t_chunk *first, size_t *allocated_bytes) {
 
 	while (buff) {
 		next = buff->next;
-		ft_printf("%p - %p: %lu bytes State %i should m %i\n", buff, next, buff->size, buff->state, buff->should_be_merge);
+		ft_printf("%p - %p: %lu bytes State %i should m %i\n", buff, next, buff->size, buff->state);
+//		if (buff->should_be_merge != 0) {
+	//		exit(1);
+		//}
 		*allocated_bytes = *allocated_bytes + buff->size;
 		buff = next;
 	}

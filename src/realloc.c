@@ -62,8 +62,11 @@ void	*ft_realloc(void *ptr, size_t size) {
 			}
 //			pthread_mutex_unlock(&mutex_malloc);
 	} else {
+
+		size_t usable_size = malloc_usable_size(ptr);
 		res = ft_malloc(size);
 		if (res) {
+			ft_memcpy(res, ptr, usable_size);
 			ft_free(ptr);
 		}
 	}
