@@ -1,0 +1,9 @@
+now check the thread things
+
+possible to optimize for myself
+
+Manage the malloc debug environment variables. You can imitate those from malloc
+system or invent your own.
+
+Create a show_alloc_mem_ex() function that displays more details, for example,
+a history of allocations, or an hexa dump of the allocated zones.
