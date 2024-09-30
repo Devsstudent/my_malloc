@@ -13,6 +13,7 @@ void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 		}
 		ptr_mem_zone->free_chunks -= 1;
 		chunk_freed->next = next;
+		ptr_mem_zone->largest_chunk = find_largest_chunk(ptr_mem_zone);
 	}
 }
 

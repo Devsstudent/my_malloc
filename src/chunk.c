@@ -10,6 +10,7 @@ bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zo
 }
 
 void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size) {
+	ft_printf("SPLIT %i\n", chunk_to_split->size);
 	if (chunk_to_split->size == size) {
 		chunk_to_split->state = BUSY;
 		current_zone->busy_chunks += 1;
@@ -47,6 +48,7 @@ t_chunk *find_largest_chunk(t_mem_zone *current_zone) {
 		}
 		buff = buff->next;
 	}
+	ft_printf("new largest chunk %p %i\n", buff, max);
 	return (new_largest_chunk);
 }
 

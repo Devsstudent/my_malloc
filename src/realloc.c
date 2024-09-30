@@ -30,6 +30,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 		//Puis split
 		//Ne pas oublier de copier la data
 		if (ptr_chunk->next && ptr_chunk->next->state == FREE) {
+			ft_printf("nice %u\n", ptr_chunk->size + ptr_chunk->next->size);
 			ptr_chunk->state = FREE;
 			(*ptr_mem_zone)->free_chunks += 1;
 			(*ptr_mem_zone)->busy_chunks -= 1;
@@ -50,7 +51,7 @@ void	*ft_realloc(void *ptr, size_t size) {
 	size = (size + 31) & ~31;
 	if (!ptr) {
 //		ft_printf("NULL");
-		show_alloc_mem();
+		//show_alloc_mem();
 		res = ft_malloc(size);
 		//ft_printf("%p", res);
 	} else if (ptr && size == 0) {
