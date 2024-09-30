@@ -17,10 +17,6 @@ void ft_free(void *ptr) {
 
 		merge_chunk(&ptr_chunk, ptr_mem_zone);
 
-		if (ptr_mem_zone->largest_chunk && ptr_chunk->size > ptr_mem_zone->largest_chunk->size) {
-			ptr_mem_zone->largest_chunk = ptr_chunk;
-		}
-
 		if (ptr_chunk->zone_type == LARGE) {
 			t_mem_zone *buff = g_alloc_info.large;
 			t_mem_zone *prev = NULL;
@@ -47,7 +43,7 @@ void ft_free(void *ptr) {
 	}
 }
 
-void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
+void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **first) {
 
 	t_chunk	*new_chunk;
 	t_chunk *chunk_freed = *ptr_chunk;
@@ -57,6 +53,9 @@ void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	ptr_mem_zone->free_chunks -= 1;
 	t_chunk *next = chunk_freed->next;
 	new_chunk->next = next;
-	next->prev = new_chunk;
+	if (next) {
+		next->prev = new_chunk;
+	}
+	*first = new_chunk;
+	ptr_mem_zone->largest_chunk = find_largest_chunk(ptr_mem_zone);
 }
-

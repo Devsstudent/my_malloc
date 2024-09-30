@@ -8,7 +8,6 @@ t_mem_zone	*get_current_zone(size_t size) {
 	if (current_zone_type == TINY || current_zone_type == SMALL) {
 		current_zone = get_tiny_or_small_zone(current_zone_type, size);
 	} else {
-		//dans le cas ou on a un block qui est free
 		current_zone = look_for_matching_zone(g_alloc_info.large, size);
 		if (!current_zone)
 		{
@@ -87,7 +86,6 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 	if (!mem_zone) {
 		mem_zone = ask_for_mem_zone(zone_type, 0);
 		if (mem_zone) {
-			//en theorie a ce moment faut aussi cree le chunk free
 			state = true;
 			new_mem_zone(mem_zone, zone_type);
 			new_zone = mem_zone;

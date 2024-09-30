@@ -37,7 +37,6 @@ bool	loop_on_zone(void *ptr, t_mem_zone **finded_zone, t_mem_zone *zone) {
 	void *zone_ptr;
 	while (zone) {
 		zone_ptr = zone->first;
-	//	ft_printf("BRUH %i %i %p %p %p\n", ptr >= zone_ptr, ptr <= (zone_ptr + zone->size), ptr, zone_ptr, zone_ptr + zone->size);
 		if (ptr >= zone_ptr && ptr <= zone_ptr + zone->size) {
 			*finded_zone = zone;
 			return (true);
