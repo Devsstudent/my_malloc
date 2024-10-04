@@ -7,6 +7,7 @@
 # include <unistd.h>
 # include "libft.h"
 # include <pthread.h>
+
 # define PAGE_SIZE getpagesize()
 # define TINY_ZONE_SIZE (560 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone)
 # define SMALL_ZONE_SIZE (4096 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone)

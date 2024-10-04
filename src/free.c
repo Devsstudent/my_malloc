@@ -1,11 +1,11 @@
-#include "malloc.h"
+#include "ft_malloc.h"
 
 void ft_free(void *ptr) {
 	t_mem_zone	*ptr_mem_zone = NULL;
 	t_chunk		*ptr_chunk = NULL;
 
 	//Check la memzone
-	bool	isValidPtr = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
+	bool	isValidPtr = (ptr != NULL && valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr));
 	if (isValidPtr && ptr_chunk->state == FREE) {
 		char *err = "Error double free\n";
 		write(2, err, ft_strlen(err));
@@ -30,7 +30,7 @@ void ft_free(void *ptr) {
 				prev->next = ptr_mem_zone->next;
 			}
 			if ((void *)ptr_mem_zone + sizeof(t_mem_zone) == g_alloc_info.large->first) {
-				g_alloc_info.large->first = ptr_mem_zone->next;
+				g_alloc_info.large->first = ptr_mem_zone->first->next;
 			}
 			if (!g_alloc_info.large->first) {
 				g_alloc_info.large = NULL;

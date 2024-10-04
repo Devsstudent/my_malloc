@@ -1,14 +1,13 @@
-#include "malloc.h"
+#include "ft_malloc.h"
 
 void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	t_chunk	*next = NULL;
 	t_chunk *chunk_freed = *ptr_chunk;
 
-	ft_printf("NEXT\n");
 	if (chunk_freed->next->size > 0) {
 		chunk_freed->size += chunk_freed->next->size + sizeof(t_chunk);
 		next = chunk_freed->next->next;
-		ft_memset(chunk_freed->next, 0, chunk_freed->next->size) + sizeof(t_chunk);
+		ft_memset(chunk_freed->next, 0, chunk_freed->next->size);
 		if (next) {
 			next->prev = chunk_freed;
 		}
@@ -20,13 +19,11 @@ void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 
 void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 
-	t_chunk	*new_chunk = NULL;
 	t_chunk *chunk_freed = *ptr_chunk;
 
 	if (chunk_freed && chunk_freed->prev && chunk_freed->prev->state == FREE) {
 		merge_with_prev(ptr_chunk, ptr_mem_zone, ptr_chunk);
 	}
-	ft_printf("%p\n", chunk_freed);
 	if (chunk_freed && chunk_freed->next && chunk_freed->next->state == FREE) {
 		merge_with_next(ptr_chunk, ptr_mem_zone);
 	}
@@ -41,10 +38,13 @@ bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr) {
 		if (get_ptr_chunk(ptr - sizeof(t_chunk), *ptr_mem_zone, ptr_chunk)) {
 				state = true;
 		} else {
-			ft_printf("Error getting ptr_chunk\n");
+			char *err = "Error getting ptr_chunk\n";
+			write(2, err, ft_strlen(err));
 		}
 	} else {
-		ft_printf("Error getting ptr_zone\n");
+		char *err = "Error getting ptr_zone\n";
+		write(2, err, ft_strlen(err));
+		ft_printf("%p\n", ptr);
 	}
 //	pthread_mutex_unlock(&mutex_malloc);
 	return state;

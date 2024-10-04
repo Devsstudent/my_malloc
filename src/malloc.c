@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "malloc.h"
+#include "ft_malloc.h"
 //Global
 //t_alloc_info alloc_info;
 

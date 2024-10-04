@@ -9,7 +9,7 @@
 /*   Updated: 2024/09/25 16:31:17 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "malloc.h"
+#include "ft_malloc.h"
 
 
 t_alloc_info g_alloc_info = {
@@ -35,6 +35,7 @@ void *ft_malloc(size_t size) {
 
 	size = (size + 31) & ~31;
 
+	ft_printf("size %i\n", size);
 	pthread_mutex_lock(&mutex_malloc);
 	t_mem_zone *current_zone = get_current_zone(size);
 
@@ -49,7 +50,6 @@ void *ft_malloc(size_t size) {
 		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
 		return NULL;
 	}
-	ft_printf("%p\n", asked_chunk);
 	return ((void *)(asked_chunk) + sizeof(t_chunk));
 }
 

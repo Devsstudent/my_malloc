@@ -1,4 +1,4 @@
-#include "malloc.h"
+#include "ft_malloc.h"
 
 t_mem_zone	*get_current_zone(size_t size) {
 	t_type current_zone_type = get_zone_type(size);

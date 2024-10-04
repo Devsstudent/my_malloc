@@ -1,11 +1,10 @@
-#include "malloc.h"
+#include "ft_malloc.h"
 
 bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_mem_zone) {
 	bool	state;
 	size_t	available_size;
 	void	*ptr;
 	int		size_mem_cpy = 0;
-	t_chunk *next;
 
 	state = false;
 	ptr = (void *)ptr_chunk + sizeof(t_chunk);
@@ -32,6 +31,8 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 			(*ptr_mem_zone)->busy_chunks -= 1;
 			merge_with_next(&ptr_chunk, *ptr_mem_zone);
 		}
+		//Il faut tester quand on realloc un pointeur, en reduisant ca size, genre il faut split le next avec un free toussa
+		ft_printf("ALLOO SWTF\n");
 		split_chunk(ptr_chunk, *ptr_mem_zone, size);
 		state = true;
 		*res = ptr;

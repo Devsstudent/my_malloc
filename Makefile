@@ -5,7 +5,7 @@ endif
 NAME = libft_malloc_$(HOSTTYPE).so
 LIB = -L ./lib/libft/ -lft
 HEADER = -I ./include -I ./lib/libft
-FLAG = -Wall  -Wextra -g -MMD
+FLAG = -Wall -Werror -Wextra -g -MMD
 OBJ = $(addsuffix .o,  malloc_bis free realloc chunk zone zone_utils chunk_utils show_alloc)
 CC = gcc
 SRC=$(OBJ:.o=.c)
