@@ -1,6 +1,7 @@
 #include "ft_malloc.h"
 
 void ft_free(void *ptr) {
+	ft_printf("Free %p\n", ptr);
 	t_mem_zone	*ptr_mem_zone = NULL;
 	t_chunk		*ptr_chunk = NULL;
 

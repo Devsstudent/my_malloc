@@ -18,61 +18,76 @@ void ft_free(void *ptr);
 
 void *stress_test_thread(void *arg) {
     void *ptrs[ALLOC_TEST_SIZE] = {NULL};
-    for (int i = 0; i < ALLOC_TEST_SIZE; i++) {
+    unsigned int thread_seed = time(NULL) ^ (unsigned long)pthread_self();
+    srand(thread_seed);
+
+    for (size_t i = 0; i < ALLOC_TEST_SIZE; i++) {
         size_t size = rand() % MAX_ALLOC_SIZE + 1;
         ptrs[i] = ft_malloc(size);
+        if (ptrs[i] == NULL) {
+            printf("ft_malloc failed for size %zu\n", size);
+            continue;
+        }
         
         // Randomly decide to ft_realloc
-        if (rand() % 2 == 0 && ptrs[i] != NULL) {
+        if (rand() % 2 == 0) {
             size_t new_size = rand() % MAX_ALLOC_SIZE + 1;
-            ptrs[i] = ft_realloc(ptrs[i], new_size);
+            void *new_ptr = ft_realloc(ptrs[i], new_size);
+            if (new_ptr == NULL) {
+                printf("ft_realloc failed for size %zu\n", new_size);
+            } else {
+                ptrs[i] = new_ptr;
+                size = new_size; // Update size after successful reallocation
+            }
         }
         
-        // Optionally, write data to memory
-        if (ptrs[i] != NULL) {
-            memset(ptrs[i], i % 255, size); // Fill with some data
-        }
+        // Write data to memory
+        memset(ptrs[i], i % 255, size); // Fill with some data
+        printf("Thread %lu: write %zu bytes\n", (unsigned long)pthread_self(), size);
         
         // Randomly ft_free half the allocations
-        if (rand() % 2 == 0 && ptrs[i] != NULL) {
+        if (rand() % 2 == 0) {
             ft_free(ptrs[i]);
             ptrs[i] = NULL;
         }
     }
     
     // Free remaining allocations
-    for (int i = 0; i < ALLOC_TEST_SIZE; i++) {
+    for (size_t i = 0; i < ALLOC_TEST_SIZE; i++) {
         if (ptrs[i] != NULL) {
             ft_free(ptrs[i]);
         }
     }
-
     return NULL;
 }
 
 void run_concurrency_test() {
     pthread_t threads[NUM_THREADS];
     for (int i = 0; i < NUM_THREADS; i++) {
-        pthread_create(&threads[i], NULL, stress_test_thread, NULL);
+        if (pthread_create(&threads[i], NULL, stress_test_thread, NULL) != 0) {
+            perror("Failed to create thread");
+            exit(1);
+        }
     }
-
     for (int i = 0; i < NUM_THREADS; i++) {
-        pthread_join(threads[i], NULL);
+        if (pthread_join(threads[i], NULL) != 0) {
+            perror("Failed to join thread");
+            exit(1);
+        }
     }
 }
 
 int main() {
     srand(time(NULL));
-
-    printf("Starting stress test...\n");
+    printf("Starting single-threaded stress test...\n");
     
     // Single-threaded stress test
     stress_test_thread(NULL);
-
+    
     // Multithreaded stress test
     printf("Running multi-threaded stress test...\n");
     run_concurrency_test();
-
+    
     printf("Stress test completed.\n");
     return 0;
 }

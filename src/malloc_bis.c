@@ -31,11 +31,11 @@ t_alloc_info get_alloc_info() {
 }
 
 void *ft_malloc(size_t size) {
+	ft_printf("Malloc %i\n", size);
 	pthread_mutex_init(&mutex_malloc, NULL);
 
 	size = (size + 31) & ~31;
 
-	ft_printf("size %i\n", size);
 	pthread_mutex_lock(&mutex_malloc);
 	t_mem_zone *current_zone = get_current_zone(size);
 
@@ -50,6 +50,7 @@ void *ft_malloc(size_t size) {
 		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
 		return NULL;
 	}
+	ft_printf("%p returned\n", (void *)(asked_chunk) + sizeof(t_chunk));
 	return ((void *)(asked_chunk) + sizeof(t_chunk));
 }
 
