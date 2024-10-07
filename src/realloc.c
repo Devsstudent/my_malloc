@@ -1,21 +1,21 @@
 #include "ft_malloc.h"
 
-bool	realloc_ptr(t_chunk **ptr_chunk, size_t size, void **res,t_mem_zone **ptr_mem_zone) {
+bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_mem_zone) {
 	bool	state;
 	size_t	available_size;
 	void	*ptr;
 	int		size_mem_cpy = 0;
 
 	state = false;
-	ptr = (void *)(*ptr_chunk) + sizeof(t_chunk);
+	ptr = (void *)ptr_chunk + sizeof(t_chunk);
 
-	available_size = get_available_size((*ptr_chunk)->next, (*ptr_chunk)->size);
+	available_size = get_available_size(ptr_chunk->next, ptr_chunk->size);
 
-	if (available_size < size && available_size != (*ptr_chunk)->size) {
+	if (available_size < size && available_size != ptr_chunk->size) {
 		pthread_mutex_unlock(&mutex_malloc);
 		*res = ft_malloc(size);
-		if ((*ptr_chunk)->size < size) {
-			size_mem_cpy = (*ptr_chunk)->size;
+		if (ptr_chunk->size < size) {
+			size_mem_cpy = ptr_chunk->size;
 		} else {
 			size_mem_cpy = size;
 		}
@@ -26,20 +26,20 @@ bool	realloc_ptr(t_chunk **ptr_chunk, size_t size, void **res,t_mem_zone **ptr_m
 			ft_free(ptr);
 		}
 	} else {
-		if ((*ptr_chunk)->next && (*ptr_chunk)->next->state == FREE) {
-			(*ptr_chunk)->state = FREE;
+		if (ptr_chunk->next && ptr_chunk->next->state == FREE) {
+			ptr_chunk->state = FREE;
 			(*ptr_mem_zone)->free_chunks += 1;
 			if ((*ptr_mem_zone)->busy_chunks > 0) {
 				(*ptr_mem_zone)->busy_chunks -= 1;
 			}
-			merge_with_next(ptr_chunk, *ptr_mem_zone);
+			merge_with_next(&ptr_chunk, *ptr_mem_zone);
 		}
 		//Il faut tester quand on realloc un pointeur, en reduisant ca size, genre il faut split le next avec un free toussa
 		ft_printf("ALLOO SWTF\n");
-		split_chunk(*ptr_chunk, *ptr_mem_zone, size);
+		split_chunk(ptr_chunk, *ptr_mem_zone, size);
 		state = true;
-		*res = (void *)(*ptr_chunk) + sizeof(t_chunk);
-		ft_printf("%p %p %p\n", ptr, *res, *ptr_chunk);
+		*res = (void *)ptr_chunk + sizeof(t_chunk);
+		ft_printf("%p %p %p\n", ptr, *res, ptr_chunk);
 	}
 	return (state);
 }
@@ -57,7 +57,7 @@ void	*ft_realloc(void *ptr, size_t size) {
 	} else if (!pthread_mutex_lock(&mutex_malloc) && valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
 			if (ptr_chunk->state == FREE) {
 				res = ptr;
-			} else if (!realloc_ptr(&ptr_chunk, size, &res, &ptr_mem_zone)){
+			} else if (!realloc_ptr(ptr_chunk, size, &res, &ptr_mem_zone)){
 				res = NULL;
 			}
 //			pthread_mutex_unlock(&mutex_malloc);

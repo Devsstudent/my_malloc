@@ -61,5 +61,5 @@ void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **fi
 		next->prev = new_chunk;
 	}
 	*first = new_chunk;
-//	ptr_mem_zone->largest_chunk = find_largest_chunk(ptr_mem_zone);
+	ptr_mem_zone->largest_chunk = find_largest_chunk(ptr_mem_zone);
 }
