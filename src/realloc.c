@@ -12,6 +12,7 @@ bool	realloc_ptr(t_chunk **ptr_chunk, size_t size, void **res,t_mem_zone **ptr_m
 	available_size = get_available_size((*ptr_chunk)->next, (*ptr_chunk)->size);
 
 	if (available_size < size && available_size != (*ptr_chunk)->size) {
+		pthread_mutex_unlock(&mutex_malloc);
 		*res = ft_malloc(size);
 		if ((*ptr_chunk)->size < size) {
 			size_mem_cpy = (*ptr_chunk)->size;
@@ -28,7 +29,9 @@ bool	realloc_ptr(t_chunk **ptr_chunk, size_t size, void **res,t_mem_zone **ptr_m
 		if ((*ptr_chunk)->next && (*ptr_chunk)->next->state == FREE) {
 			(*ptr_chunk)->state = FREE;
 			(*ptr_mem_zone)->free_chunks += 1;
-			(*ptr_mem_zone)->busy_chunks -= 1;
+			if ((*ptr_mem_zone)->busy_chunks > 0) {
+				(*ptr_mem_zone)->busy_chunks -= 1;
+			}
 			merge_with_next(ptr_chunk, *ptr_mem_zone);
 		}
 		//Il faut tester quand on realloc un pointeur, en reduisant ca size, genre il faut split le next avec un free toussa
@@ -51,8 +54,7 @@ void	*ft_realloc(void *ptr, size_t size) {
 		res = ft_malloc(size);
 	} else if (ptr && size == 0) {
 		ft_free(ptr);
-	} else if (valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
-//			pthread_mutex_lock(&mutex_malloc);
+	} else if (!pthread_mutex_lock(&mutex_malloc) && valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
 			if (ptr_chunk->state == FREE) {
 				res = ptr;
 			} else if (!realloc_ptr(&ptr_chunk, size, &res, &ptr_mem_zone)){
@@ -61,6 +63,7 @@ void	*ft_realloc(void *ptr, size_t size) {
 //			pthread_mutex_unlock(&mutex_malloc);
 	} else {
 
+		pthread_mutex_unlock(&mutex_malloc);
 		size_t usable_size = malloc_usable_size(ptr);
 		res = ft_malloc(size);
 		if (res) {
@@ -68,6 +71,7 @@ void	*ft_realloc(void *ptr, size_t size) {
 			ft_free(ptr);
 		}
 	}
+	pthread_mutex_unlock(&mutex_malloc);
 	ft_printf("%p %i from realloc\n", res, (int)size);
 	return (res);
 }

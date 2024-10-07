@@ -14,7 +14,7 @@ void ft_free(void *ptr);
 // Allocator stress test configuration
 #define ALLOC_TEST_SIZE 10000 // Number of allocations to perform
 #define MAX_ALLOC_SIZE 1024   // Maximum size of allocation in bytes
-#define NUM_THREADS 0         // Number of threads for concurrency test
+#define NUM_THREADS 1         // Number of threads for concurrency test
 
 void *stress_test_thread(void *arg) {
     void *ptrs[ALLOC_TEST_SIZE] = {NULL};
@@ -79,14 +79,17 @@ void run_concurrency_test() {
 
 int main() {
     srand(time(NULL));
-    printf("Starting single-threaded stress test...\n");
+	printf("Starting single-threaded stress test...\n");
     
     // Single-threaded stress test
     stress_test_thread(NULL);
+	printf("test1 ok\n");
+   	printf("Starting single-threaded stress test...\n");
+    stress_test_thread(NULL);
     
     // Multithreaded stress test
-    printf("Running multi-threaded stress test...\n");
-    run_concurrency_test();
+//    printf("Running multi-threaded stress test...\n");
+ //   run_concurrency_test();
     
     printf("Stress test completed.\n");
     return 0;

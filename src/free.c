@@ -6,6 +6,7 @@ void ft_free(void *ptr) {
 	t_chunk		*ptr_chunk = NULL;
 
 	//Check la memzone
+	pthread_mutex_lock(&mutex_malloc);
 	bool	isValidPtr = (ptr != NULL && valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr));
 	if (isValidPtr && ptr_chunk->state == FREE) {
 		char *err = "Error double free\n";
@@ -14,7 +15,9 @@ void ft_free(void *ptr) {
 	//	pthread_mutex_lock(&mutex_malloc);
 		ptr_chunk->state = FREE;
 		ptr_mem_zone->free_chunks += 1;
-		ptr_mem_zone->busy_chunks -= 1;
+		if (ptr_mem_zone->busy_chunks > 0) {
+			ptr_mem_zone->busy_chunks -= 1;
+		}
 
 		merge_chunk(&ptr_chunk, ptr_mem_zone);
 
@@ -40,8 +43,8 @@ void ft_free(void *ptr) {
 				write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
 			}
 		}
-	//	pthread_mutex_unlock(&mutex_malloc);
 	}
+	pthread_mutex_unlock(&mutex_malloc);
 }
 
 void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **first) {
@@ -58,5 +61,5 @@ void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **fi
 		next->prev = new_chunk;
 	}
 	*first = new_chunk;
-	ptr_mem_zone->largest_chunk = find_largest_chunk(ptr_mem_zone);
+//	ptr_mem_zone->largest_chunk = find_largest_chunk(ptr_mem_zone);
 }

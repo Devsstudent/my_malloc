@@ -7,7 +7,7 @@ void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	if (chunk_freed->next->size > 0) {
 		chunk_freed->size += chunk_freed->next->size + sizeof(t_chunk);
 		next = chunk_freed->next->next;
-		ft_memset(chunk_freed->next, 0, chunk_freed->next->size);
+		ft_memset(chunk_freed->next, 0, chunk_freed->next->size + sizeof(t_chunk));
 		if (next) {
 			next->prev = chunk_freed;
 		}
