@@ -35,11 +35,12 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 			merge_with_next(&ptr_chunk, *ptr_mem_zone);
 		}
 		//Il faut tester quand on realloc un pointeur, en reduisant ca size, genre il faut split le next avec un free toussa
-		ft_printf("ALLOO SWTF\n");
+		//ft_printf("ALLOO SWTF\n");
 		split_chunk(ptr_chunk, *ptr_mem_zone, size);
 		state = true;
 		*res = (void *)ptr_chunk + sizeof(t_chunk);
-		ft_printf("%p %p %p\n", ptr, *res, ptr_chunk);
+		//ft_printf("%p %p %p\n", ptr, *res, ptr_chunk);
+		pthread_mutex_unlock(&mutex_malloc);
 	}
 	return (state);
 }
@@ -48,19 +49,23 @@ void	*ft_realloc(void *ptr, size_t size) {
 	void *res = NULL;
 	t_mem_zone	*ptr_mem_zone = NULL;
 	t_chunk		*ptr_chunk = NULL;
+	bool		valid = false;
 
 	size = (size + 31) & ~31;
+	pthread_mutex_lock(&mutex_malloc);
+	valid = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
+	pthread_mutex_unlock(&mutex_malloc);
 	if (!ptr) {
 		res = ft_malloc(size);
 	} else if (ptr && size == 0) {
 		ft_free(ptr);
-	} else if (!pthread_mutex_lock(&mutex_malloc) && valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr)) {
+	} else if (!pthread_mutex_lock(&mutex_malloc) && valid) {
 			if (ptr_chunk->state == FREE) {
 				res = ptr;
+				pthread_mutex_unlock(&mutex_malloc);
 			} else if (!realloc_ptr(ptr_chunk, size, &res, &ptr_mem_zone)){
 				res = NULL;
 			}
-//			pthread_mutex_unlock(&mutex_malloc);
 	} else {
 
 		pthread_mutex_unlock(&mutex_malloc);
@@ -71,7 +76,6 @@ void	*ft_realloc(void *ptr, size_t size) {
 			ft_free(ptr);
 		}
 	}
-	pthread_mutex_unlock(&mutex_malloc);
-	ft_printf("%p %i from realloc\n", res, (int)size);
+	//ft_printf("%p %i from realloc\n", res, (int)size);
 	return (res);
 }

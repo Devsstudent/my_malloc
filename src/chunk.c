@@ -10,7 +10,7 @@ bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zo
 }
 
 void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size) {
-	ft_printf("SPLITIIII");
+	//ft_printf("SPLITIIII");
 	if (chunk_to_split->size == size) {
 		chunk_to_split->state = BUSY;
 		current_zone->busy_chunks += 1;

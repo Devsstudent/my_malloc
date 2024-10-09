@@ -18,7 +18,7 @@ void	ft_lstdisplay(t_list **stack)
 	buff = *stack;
 	while (buff != NULL)
 	{
-		ft_printf("%i\n", *((int *) buff->content));
+		//ft_printf("%i\n", *((int *) buff->content));
 		buff = buff->next;
 	}
 }

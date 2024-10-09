@@ -25,21 +25,19 @@ t_alloc_info g_alloc_info = {
 };
 
 pthread_mutex_t mutex_malloc = PTHREAD_MUTEX_INITIALIZER;
-
 t_alloc_info get_alloc_info() {
 	return g_alloc_info;
 }
 
 void *ft_malloc(size_t size) {
-	ft_printf("Malloc %i\n", size);
-	pthread_mutex_init(&mutex_malloc, NULL);
-
+	//ft_printf("Malloc %i\n", size);
 	size = (size + 31) & ~31;
 
 	pthread_mutex_lock(&mutex_malloc);
 	t_mem_zone *current_zone = get_current_zone(size);
 
 	if (!current_zone) {
+			pthread_mutex_unlock(&mutex_malloc);
 		//Error on a crash
 		return NULL;
 	}
@@ -50,7 +48,7 @@ void *ft_malloc(size_t size) {
 		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
 		return NULL;
 	}
-	ft_printf("%p returned\n", (void *)(asked_chunk) + sizeof(t_chunk));
+	//ft_printf("%p returned\n", (void *)(asked_chunk) + sizeof(t_chunk));
 	return ((void *)(asked_chunk) + sizeof(t_chunk));
 }
 
@@ -60,24 +58,24 @@ void *ft_malloc(size_t size) {
 //#warning "DYNAMIC is defined"
 void    *malloc(size_t size)
 {
-	ft_printf("Malloc %i\n", size);
+	//ft_printf("Malloc %i\n", size);
     void *ptr = ft_malloc(size);
 	//show_alloc_mem();
-	ft_printf("%p returned\n", ptr);
+	//ft_printf("%p returned\n", ptr);
 	return (ptr);
 }
 
 void    free(void *ptr)
 {
-	ft_printf("Free %p\n", ptr);
+	//ft_printf("Free %p\n", ptr);
     ft_free(ptr);
 }
 
 void *realloc(void *ptr, size_t size) {
-	ft_printf("Realloc %p %i\n", ptr, size);
+	//ft_printf("Realloc %p %i\n", ptr, size);
 	void *res = ft_realloc(ptr, size);
 
-	ft_printf("Realloc returned %p\n", res);
+	//ft_printf("Realloc returned %p\n", res);
 	return (res);
 }
 

@@ -44,7 +44,7 @@ bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr) {
 	} else {
 		char *err = "Error getting ptr_zone\n";
 		write(2, err, ft_strlen(err));
-		ft_printf("%p\n", ptr);
+		//ft_printf("%p\n", ptr);
 	}
 //	pthread_mutex_unlock(&mutex_malloc);
 	return state;
