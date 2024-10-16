@@ -16,7 +16,7 @@ void ft_free(void *ptr);
 #define MAX_ALLOC_SIZE 1024   // Maximum size of allocation in bytes
 #define NUM_THREADS 100         // Number of threads for concurrency test
 
-void *stress_test_thread(void *arg) {
+void *stress_test_thread() {
     void *ptrs[ALLOC_TEST_SIZE] = {NULL};
     unsigned int thread_seed = time(NULL) ^ (unsigned long)pthread_self();
     srand(thread_seed);
