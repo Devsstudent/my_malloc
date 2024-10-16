@@ -14,7 +14,7 @@ void ft_free(void *ptr);
 // Allocator stress test configuration
 #define ALLOC_TEST_SIZE 10000 // Number of allocations to perform
 #define MAX_ALLOC_SIZE 1024   // Maximum size of allocation in bytes
-#define NUM_THREADS 4         // Number of threads for concurrency test
+#define NUM_THREADS 100         // Number of threads for concurrency test
 
 void *stress_test_thread(void *arg) {
     void *ptrs[ALLOC_TEST_SIZE] = {NULL};

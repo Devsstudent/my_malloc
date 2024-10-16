@@ -1,5 +1,28 @@
 #include "ft_malloc.h"
 
+static inline void free_large_zone(t_mem_zone *ptr_mem_zone) {
+	t_mem_zone *buff = g_alloc_info.large;
+	t_mem_zone *prev = NULL;
+	while (buff) {
+		if (buff->next && buff->next == ptr_mem_zone) {
+			prev = buff;
+		}
+		buff = buff->next;
+	}
+	if (prev) {
+		prev->next = ptr_mem_zone->next;
+	}
+	if ((void *)ptr_mem_zone + sizeof(t_mem_zone) == g_alloc_info.large->first) {
+		g_alloc_info.large->first = ptr_mem_zone->first->next;
+	}
+	if (!g_alloc_info.large->first) {
+		g_alloc_info.large = NULL;
+	}
+	if (munmap(ptr_mem_zone, ptr_mem_zone->size) < 0) {
+		write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
+	}
+}
+
 void ft_free(void *ptr) {
 	//ft_printf("Free %p\n", ptr);
 	t_mem_zone	*ptr_mem_zone = NULL;
@@ -21,27 +44,9 @@ void ft_free(void *ptr) {
 
 		merge_chunk(&ptr_chunk, ptr_mem_zone);
 
+
 		if (ptr_chunk->zone_type == LARGE) {
-			t_mem_zone *buff = g_alloc_info.large;
-			t_mem_zone *prev = NULL;
-			while (buff) {
-				if (buff->next && buff->next == ptr_mem_zone) {
-					prev = buff;
-				}
-				buff = buff->next;
-			}
-			if (prev) {
-				prev->next = ptr_mem_zone->next;
-			}
-			if ((void *)ptr_mem_zone + sizeof(t_mem_zone) == g_alloc_info.large->first) {
-				g_alloc_info.large->first = ptr_mem_zone->first->next;
-			}
-			if (!g_alloc_info.large->first) {
-				g_alloc_info.large = NULL;
-			}
-			if (munmap(ptr_mem_zone, ptr_mem_zone->size) < 0) {
-				write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
-			}
+			free_large_zone(ptr_mem_zone);
 		}
 	}
 	pthread_mutex_unlock(&mutex_malloc);
