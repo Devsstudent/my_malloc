@@ -51,7 +51,7 @@ void	*ft_realloc(void *ptr, size_t size) {
 	t_chunk		*ptr_chunk = NULL;
 	bool		valid = false;
 
-	size = (size + 31) & ~31;
+	size = (size + 15) & ~15;
 	pthread_mutex_lock(&mutex_malloc);
 	valid = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
 	pthread_mutex_unlock(&mutex_malloc);

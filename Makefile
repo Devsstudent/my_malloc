@@ -27,6 +27,7 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	gcc -shared -o $(NAME) -fPIC $(OBJ) $(LIB)
+	ln -s $(NAME) libft_malloc.so
 
 $(SRC):
 	@echo compiling $@

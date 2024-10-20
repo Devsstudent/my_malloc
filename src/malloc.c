@@ -31,7 +31,7 @@ t_alloc_info get_alloc_info() {
 
 void *ft_malloc(size_t size) {
 	//ft_printf("Malloc %i\n", size);
-	size = (size + 31) & ~31;
+	size = (size + 15) & ~15;
 
 	pthread_mutex_lock(&mutex_malloc);
 	t_mem_zone *current_zone = get_current_zone(size);
