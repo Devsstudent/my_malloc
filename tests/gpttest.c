@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <assert.h>
-#include "ft_malloc.h"
+#include "malloc.h"
 
 // Function prototypes for your custom allocator
 void *ft_malloc(size_t size);

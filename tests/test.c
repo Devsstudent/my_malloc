@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "unity.h"
-#include "ft_malloc.h"
+#include "malloc.h"
 
 void setUp() {}
 void tearDown() {}

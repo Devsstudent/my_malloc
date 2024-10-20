@@ -1,4 +1,4 @@
-#include "ft_malloc.h"
+#include "malloc.h"
 
 void	loop_mem_zone(t_mem_zone *start, size_t *allocated_bytes) {
 	t_mem_zone	*buff = start;

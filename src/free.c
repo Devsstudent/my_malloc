@@ -1,4 +1,4 @@
-#include "ft_malloc.h"
+#include "malloc.h"
 
 static inline void free_large_zone(t_mem_zone *ptr_mem_zone) {
 	t_mem_zone *buff = g_alloc_info.large;

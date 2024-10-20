@@ -1,4 +1,4 @@
-#include "ft_malloc.h"
+#include "malloc.h"
 
 void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	t_chunk	*next = NULL;

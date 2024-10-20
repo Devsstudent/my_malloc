@@ -1,4 +1,4 @@
-#include "ft_malloc.h"
+#include "malloc.h"
 
 
 void	new_mem_zone(t_mem_zone *zone, t_type type) {
