@@ -11,7 +11,7 @@ t_mem_zone	*get_current_zone(size_t size) {
 		current_zone = look_for_matching_zone(g_alloc_info.large, size);
 		if (!current_zone)
 		{
-			current_zone = ask_for_mem_zone(current_zone_type, size + sizeof(t_chunk));
+			current_zone = ask_for_mem_zone(current_zone_type, ROUND_UP_TO_PAGE_SIZE(size + sizeof(t_chunk)));
 			if (current_zone) {
 				current_zone->zone_type = current_zone_type;
 				current_zone->free_chunks = 1;
@@ -19,7 +19,7 @@ t_mem_zone	*get_current_zone(size_t size) {
 				current_zone->next = NULL;
 				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone), FREE, current_zone_type, size);
 				current_zone->largest_chunk = current_zone->first;
-				current_zone->size = size;
+				current_zone->size = ROUND_UP_TO_PAGE_SIZE(size + sizeof(t_chunk)) - sizeof(t_chunk);
 				add_large_zone(current_zone);
 			}
 		}

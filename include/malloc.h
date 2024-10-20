@@ -9,8 +9,10 @@
 # include <pthread.h>
 
 # define PAGE_SIZE getpagesize()
-# define TINY_ZONE_SIZE (560 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone)
-# define SMALL_ZONE_SIZE (4096 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone)
+#define ROUND_UP_TO_PAGE_SIZE(size) (((size) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+
+#define TINY_ZONE_SIZE ROUND_UP_TO_PAGE_SIZE((560 * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone))
+#define SMALL_ZONE_SIZE ROUND_UP_TO_PAGE_SIZE((PAGE_SIZE * 100 + 100 * sizeof(t_chunk)) + sizeof(t_mem_zone))
 
 typedef enum type {
 	TINY,
