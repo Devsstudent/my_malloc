@@ -90,6 +90,7 @@ void	*ft_realloc(void *ptr, size_t size);
 void	ft_free(void *ptr);
 
 extern	void	show_alloc_mem();
+extern	void	show_alloc_mem_ex();
 
 extern pthread_mutex_t g_mutex_malloc;
 

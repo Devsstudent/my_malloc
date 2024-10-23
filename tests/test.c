@@ -6,7 +6,7 @@
 /*   By: odessein <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 15:44:39 by odessein          #+#    #+#             */
-/*   Updated: 2024/10/04 17:50:48 by odessein         ###   ########.fr       */
+/*   Updated: 2024/10/23 17:51:52 by odessein         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ void test_small_alloc_2_mem_zone()
         }
         matrix[i][cols] = '\0'; // Null-terminate each string
     }
+	show_alloc_mem_ex();
 	t_alloc_info info = get_alloc_info();
 	TEST_ASSERT_TRUE(info.nb_small_elems == 2);
 
@@ -74,8 +75,8 @@ void test_tiny_alloc_2_mem_zone()
         }
         matrix[i][cols] = '\0'; // Null-terminate each string
     }
+	show_alloc_mem_ex();
 	t_alloc_info info = get_alloc_info();
-	show_alloc_mem();
 	TEST_ASSERT_TRUE(info.nb_tiny_elems == 2);
     // Free dynamically allocated memory
     for (int i = 0; i < rows; i++) {
@@ -570,7 +571,7 @@ void	test_merging_chunk() {
 	void *ptr2 = ft_malloc(50);
 //	void *ptr3 = ft_malloc(4096);
 
-	show_alloc_mem();
+	show_alloc_mem_ex();
 	ft_free(ptr);
 	ft_free(ptr2);
 
