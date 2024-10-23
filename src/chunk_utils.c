@@ -32,7 +32,6 @@ void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr) {
 	bool	state = false;
 
-//	pthread_mutex_lock(&mutex_malloc);
 	if (ptr && get_ptr_zone(ptr, ptr_mem_zone))
 	{
 		if (get_ptr_chunk(ptr - sizeof(t_chunk), *ptr_mem_zone, ptr_chunk)) {
@@ -44,9 +43,7 @@ bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr) {
 	} else {
 		char *err = "Error getting ptr_zone\n";
 		write(2, err, ft_strlen(err));
-		//ft_printf("%p\n", ptr);
 	}
-//	pthread_mutex_unlock(&mutex_malloc);
 	return state;
 }
 

@@ -91,6 +91,6 @@ void	ft_free(void *ptr);
 
 extern	void	show_alloc_mem();
 
-extern pthread_mutex_t mutex_malloc;
+extern pthread_mutex_t g_mutex_malloc;
 
 extern t_alloc_info g_alloc_info;

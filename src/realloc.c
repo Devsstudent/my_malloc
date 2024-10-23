@@ -12,7 +12,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 	available_size = get_available_size(ptr_chunk->next, ptr_chunk->size);
 
 	if (available_size < size && available_size != ptr_chunk->size) {
-		pthread_mutex_unlock(&mutex_malloc);
+		pthread_mutex_unlock(&g_mutex_malloc);
 		*res = ft_malloc(size);
 		if (ptr_chunk->size < size) {
 			size_mem_cpy = ptr_chunk->size;
@@ -40,7 +40,7 @@ bool	realloc_ptr(t_chunk *ptr_chunk, size_t size, void **res,t_mem_zone **ptr_me
 		state = true;
 		*res = (void *)ptr_chunk + sizeof(t_chunk);
 		//ft_printf("%p %p %p\n", ptr, *res, ptr_chunk);
-		pthread_mutex_unlock(&mutex_malloc);
+		pthread_mutex_unlock(&g_mutex_malloc);
 	}
 	return (state);
 }
@@ -52,23 +52,23 @@ void	*ft_realloc(void *ptr, size_t size) {
 	bool		valid = false;
 
 	size = (size + 15) & ~15;
-	pthread_mutex_lock(&mutex_malloc);
+	pthread_mutex_lock(&g_mutex_malloc);
 	valid = valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr);
-	pthread_mutex_unlock(&mutex_malloc);
+	pthread_mutex_unlock(&g_mutex_malloc);
 	if (!ptr) {
 		res = ft_malloc(size);
 	} else if (ptr && size == 0) {
 		ft_free(ptr);
-	} else if (!pthread_mutex_lock(&mutex_malloc) && valid) {
+	} else if (!pthread_mutex_lock(&g_mutex_malloc) && valid) {
 			if (ptr_chunk->state == FREE) {
 				res = ptr;
-				pthread_mutex_unlock(&mutex_malloc);
+				pthread_mutex_unlock(&g_mutex_malloc);
 			} else if (!realloc_ptr(ptr_chunk, size, &res, &ptr_mem_zone)){
 				res = NULL;
 			}
 	} else {
 
-		pthread_mutex_unlock(&mutex_malloc);
+		pthread_mutex_unlock(&g_mutex_malloc);
 		size_t usable_size = malloc_usable_size(ptr);
 		res = ft_malloc(size);
 		if (res) {

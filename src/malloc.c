@@ -24,7 +24,7 @@ t_alloc_info g_alloc_info = {
 	.nb_large_elems = 0,
 };
 
-pthread_mutex_t mutex_malloc = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t g_mutex_malloc = PTHREAD_MUTEX_INITIALIZER;
 t_alloc_info get_alloc_info() {
 	return g_alloc_info;
 }
@@ -33,17 +33,17 @@ void *ft_malloc(size_t size) {
 	//ft_printf("Malloc %i\n", size);
 	size = (size + 15) & ~15;
 
-	pthread_mutex_lock(&mutex_malloc);
+	pthread_mutex_lock(&g_mutex_malloc);
 	t_mem_zone *current_zone = get_current_zone(size);
 
 	if (!current_zone) {
-			pthread_mutex_unlock(&mutex_malloc);
+			pthread_mutex_unlock(&g_mutex_malloc);
 		//Error on a crash
 		return NULL;
 	}
 
 	t_chunk *asked_chunk = get_chunk(current_zone, size);
-	pthread_mutex_unlock(&mutex_malloc);
+	pthread_mutex_unlock(&g_mutex_malloc);
 	if (!asked_chunk) {
 		//Error on a pas trouver de chunk qui match (ca doit jamais arriver)
 		return NULL;

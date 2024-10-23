@@ -48,26 +48,7 @@ void ft_free_small_tiny_zone(t_mem_zone *ptr_mem_zone) {
 			(*zone) = NULL;
 		}
 	
-		if (*nb_zones == 1) {
-/*			if (ptr_mem_zone->zone_type == SMALL){ 
-				if (need_unmap_small) { */
-
-		//			if (munmap(ptr_mem_zone +  2*PAGE_SIZE, ptr_mem_zone->size - PAGE_SIZE) < 0) {
-		//			write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
-		//			}
-		//			ptr_mem_zone->largest_chunk->size = PAGE_SIZE;
-	//		need_unmap_small = false;
-				}
-/*
-			}  else if (need_unmap_tiny) {
-				ft_printf("COOL\n");
-				if (munmap(ptr_mem_zone +  2*PAGE_SIZE, ptr_mem_zone->size - PAGE_SIZE) < 0) {
-					write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
-				}
-				ptr_mem_zone->largest_chunk->size = PAGE_SIZE;
-				need_unmap_tiny = false;
-			} */
-		else {
+		if (*nb_zones > 1){
 			if (munmap(ptr_mem_zone, ptr_mem_zone->size + sizeof(t_mem_zone)) < 0) {
 				write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
 			}
@@ -78,18 +59,16 @@ void ft_free_small_tiny_zone(t_mem_zone *ptr_mem_zone) {
 
 
 void ft_free(void *ptr) {
-	//ft_printf("Free %p\n", ptr);
 	t_mem_zone	*ptr_mem_zone = NULL;
 	t_chunk		*ptr_chunk = NULL;
 
 	//Check la memzone
-	pthread_mutex_lock(&mutex_malloc);
+	pthread_mutex_lock(&g_mutex_malloc);
 	bool	isValidPtr = (ptr != NULL && valid_ptr(&ptr_mem_zone, &ptr_chunk, ptr));
 	if (isValidPtr && ptr_chunk->state == FREE) {
 		char *err = "Error double free\n";
 		write(2, err, ft_strlen(err));
 	} else if (isValidPtr) {
-	//	pthread_mutex_lock(&mutex_malloc);
 		ptr_chunk->state = FREE;
 		ptr_mem_zone->free_chunks += 1;
 		if (ptr_mem_zone->busy_chunks > 0) {
@@ -107,7 +86,7 @@ void ft_free(void *ptr) {
 			ft_free_small_tiny_zone(ptr_mem_zone);
 		}
 	}
-	pthread_mutex_unlock(&mutex_malloc);
+	pthread_mutex_unlock(&g_mutex_malloc);
 }
 
 void	merge_with_prev(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone, t_chunk **first) {
