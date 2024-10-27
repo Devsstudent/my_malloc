@@ -12,7 +12,7 @@ static inline void free_large_zone(t_mem_zone *ptr_mem_zone) {
 	if (prev) {
 		prev->next = ptr_mem_zone->next;
 	}
-	if ((void *)ptr_mem_zone + sizeof(t_mem_zone) == g_alloc_info.large->first) {
+	if ((void *)ptr_mem_zone + sizeof(t_mem_zone) + 8 == g_alloc_info.large->first) {
 		g_alloc_info.large->first = ptr_mem_zone->first->next;
 	}
 	if (!g_alloc_info.large->first) {
@@ -27,33 +27,33 @@ void ft_free_small_tiny_zone(t_mem_zone *ptr_mem_zone) {
 	t_mem_zone *buff = ptr_mem_zone->zone_type == SMALL ? g_alloc_info.small : g_alloc_info.tiny;
 	size_t	*nb_zones = ptr_mem_zone->zone_type == SMALL ? &g_alloc_info.nb_small_elems: &g_alloc_info.nb_tiny_elems;
 	t_mem_zone *prev = NULL;
+
 	
 
 
-	if (ptr_mem_zone->free_chunks == 1 && ptr_mem_zone->busy_chunks == 0) {
+	if (buff && ptr_mem_zone->free_chunks == 1 && ptr_mem_zone->busy_chunks == 0) {
 		while (buff) {
 			if (buff->next && buff->next == ptr_mem_zone) {
-			prev = buff;
+			  prev = buff;
 			}
-		buff = buff->next;
-		}
-		t_mem_zone **zone = ptr_mem_zone->zone_type == SMALL ? &g_alloc_info.small : &g_alloc_info.tiny;
-		if (prev) {
-			prev->next = ptr_mem_zone->next;
-		}
-		if (ptr_mem_zone == (*zone) && ptr_mem_zone->next) {
-			(*zone) = ptr_mem_zone->next;
-		}
-		if (!(*zone)->first) {
-			(*zone) = NULL;
-		}
-	
-		if (*nb_zones > 1){
-			if (munmap(ptr_mem_zone, ptr_mem_zone->size + sizeof(t_mem_zone)) < 0) {
-				write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
-			}
-			*nb_zones = *nb_zones - 1;
-		}
+		  buff = buff->next;
+		  }
+		  t_mem_zone **zone = ptr_mem_zone->zone_type == SMALL ? &g_alloc_info.small : &g_alloc_info.tiny;
+		  if (prev) {
+		  	prev->next = ptr_mem_zone->next;
+		  }
+		  if (ptr_mem_zone == (*zone) && ptr_mem_zone->next) {
+		  	(*zone) = ptr_mem_zone->next;
+		  }
+		  if (!(*zone)->first) {
+		  	(*zone) = NULL;
+		  }
+      if (*nb_zones > 1) {
+			  if (munmap(ptr_mem_zone, ptr_mem_zone->size + sizeof(t_mem_zone)) < 0) {
+				  write(2, "Error munamp\n", ft_strlen("Error munmap\n"));
+			  }
+			  *nb_zones = (*nb_zones) - 1;
+	  }
 	}
 }
 
@@ -75,13 +75,11 @@ void ft_free(void *ptr) {
 			ptr_mem_zone->busy_chunks -= 1;
 		}
 
-		merge_chunk(&ptr_chunk, ptr_mem_zone);
 
 		if (ptr_chunk->zone_type == LARGE) {
 			free_large_zone(ptr_mem_zone);
-		} else {
+		} else if (ptr_mem_zone->busy_chunks == 0 && ptr_mem_zone->free_chunks != 2) {
 			merge_chunk(&ptr_chunk, ptr_mem_zone);
-
 			//checker si on a plus de chunk dans la zonne pour free
 			ft_free_small_tiny_zone(ptr_mem_zone);
 		}

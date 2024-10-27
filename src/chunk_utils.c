@@ -4,7 +4,7 @@ void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone) {
 	t_chunk	*next = NULL;
 	t_chunk *chunk_freed = *ptr_chunk;
 
-	if (chunk_freed->next->size > 0) {
+	if (chunk_freed && chunk_freed->next && chunk_freed->next->size > 0) {
 		chunk_freed->size += chunk_freed->next->size + sizeof(t_chunk);
 		next = chunk_freed->next->next;
 		ft_memset(chunk_freed->next, 0, chunk_freed->next->size + sizeof(t_chunk));
@@ -41,8 +41,8 @@ bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr) {
 			write(2, err, ft_strlen(err));
 		}
 	} else {
-		char *err = "Error getting ptr_zone\n";
-		write(2, err, ft_strlen(err));
+//		char *err = "Error getting ptr_zone\n";
+//		write(2, err, ft_strlen(err));
 	}
 	return state;
 }

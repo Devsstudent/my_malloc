@@ -18,7 +18,7 @@ void	split_chunk(t_chunk *chunk_to_split, t_mem_zone *current_zone, size_t size)
 	} else {
 		chunk_to_split->state = BUSY;
 		int size_new_chunk = chunk_to_split->size - size;
-		if (size_new_chunk - (int)sizeof(t_chunk) > 0) {
+		if ((size_t)size_new_chunk - sizeof(t_chunk) > 0) {
 			t_chunk *new = new_chunk((void *)(chunk_to_split) + size + sizeof(t_chunk), FREE, current_zone->zone_type, size_new_chunk - sizeof(t_chunk));
 			new->prev = chunk_to_split;
 			if (chunk_to_split->next) {

@@ -6,7 +6,7 @@ void	new_mem_zone(t_mem_zone *zone, t_type type) {
 	zone->busy_chunks = 0;
 	zone->next = NULL;
 	zone->zone_type = type;
-	zone->first = new_chunk((void *)(zone) + sizeof(t_mem_zone), FREE, type, (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - sizeof(t_mem_zone));
+	zone->first = new_chunk((void *)(zone) + sizeof(t_mem_zone) + 8, FREE, type, (type == TINY ? TINY_ZONE_SIZE : SMALL_ZONE_SIZE) - sizeof(t_chunk) - (sizeof(t_mem_zone) + 8));
 	zone->largest_chunk = zone->first;
 }
 
@@ -18,7 +18,7 @@ void	*ask_for_mem_zone(t_type type, size_t size) {
 	} else if (type == SMALL) {
 		zone = mmap(g_alloc_info.small, SMALL_ZONE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	} else {
-		zone = mmap(g_alloc_info.large, size + sizeof(t_mem_zone),PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+		zone = mmap(g_alloc_info.large, size + sizeof(t_mem_zone) + 8,PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 	}
 	return (zone);
 }

@@ -17,7 +17,7 @@ t_mem_zone	*get_current_zone(size_t size) {
 				current_zone->free_chunks = 1;
 				current_zone->busy_chunks = 0;
 				current_zone->next = NULL;
-				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone), FREE, current_zone_type, size);
+				current_zone->first = new_chunk((void *)(current_zone) + sizeof(t_mem_zone) + 8, FREE, current_zone_type, size);
 				current_zone->largest_chunk = current_zone->first;
 				current_zone->size = ROUND_UP_TO_PAGE_SIZE(size + sizeof(t_chunk)) - sizeof(t_chunk);
 				add_large_zone(current_zone);
@@ -89,10 +89,13 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 			state = true;
 			new_mem_zone(mem_zone, zone_type);
 			new_zone = mem_zone;
-			if (zone_type == TINY)
+			if (zone_type == TINY) {
 				g_alloc_info.tiny = new_zone;
-			else
+				new_zone->size = TINY_ZONE_SIZE - (sizeof(t_mem_zone) + 8);
+			} else {
 				g_alloc_info.small = new_zone;
+				new_zone->size = SMALL_ZONE_SIZE - (sizeof(t_mem_zone) + 8);
+			}
 		}
 	}
 	//Meaning  on est pas passer au dessus
@@ -109,10 +112,10 @@ bool add_zone_tiny_small(t_mem_zone *mem_zone, t_type zone_type) {
 	}
 	if (zone_type == TINY) {
 		g_alloc_info.last_tiny = new_zone;
-		new_zone->size = TINY_ZONE_SIZE - sizeof(t_mem_zone);
+		new_zone->size = TINY_ZONE_SIZE - (sizeof(t_mem_zone) + 8);
 	} else {
 		g_alloc_info.last_small = new_zone;
-		new_zone->size = SMALL_ZONE_SIZE - sizeof(t_mem_zone);
+		new_zone->size = SMALL_ZONE_SIZE - (sizeof(t_mem_zone) + 8);
 	}
 	return (state);
 }

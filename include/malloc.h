@@ -74,7 +74,6 @@ bool	check_chunk_is_matching(t_chunk *chunk, size_t size, t_mem_zone *current_zo
 bool	get_ptr_chunk(void *ptr, t_mem_zone *ptr_mem_zone, t_chunk **ptr_chunk);
 bool	loop_on_zone(void *ptr, t_mem_zone **finded_zone, t_mem_zone *zone);
 bool	get_ptr_zone(void *ptr, t_mem_zone **finded_zone);
-void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
 bool	valid_ptr(t_mem_zone **ptr_mem_zone, t_chunk **ptr_chunk, void *ptr);
 void	merge_chunk(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
 void	merge_with_next(t_chunk **ptr_chunk, t_mem_zone *ptr_mem_zone);
