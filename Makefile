@@ -65,4 +65,4 @@ fclean: clean
 re: fclean all
 
 .PHONY: all bonus clean fclean re test
-#-include $(D_LST)
+-include $(D_LST)
